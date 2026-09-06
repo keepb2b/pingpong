@@ -141,7 +141,41 @@ X / Facebook / Instagram / Googleビジネスプロフィール / WordPress に�
 
 ---
 
-## 3. 定期実行（cron）
+## 3. Vercelへのデプロイ
+
+`.env.local` は `.gitignore` に含まれるためリポジトリに入りません。
+**Vercel 側で環境変数を設定しないと、Supabaseに接続できず画面が表示されません。**
+
+Vercel → Project → Settings → Environment Variables に、最低限この3つを追加します
+（Production / Preview / Development すべてにチェック）。
+
+| 変数名 | 必須 | 未設定だとどうなるか |
+|---|:---:|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | ログイン・管理画面が表示できない |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | 同上 |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | AI処理・LINE・cronが動かない |
+| `OPENROUTER_API_KEY` | | AIは定型のフォールバックで動作 |
+| `OPENROUTER_MODEL` / `..._FAST` | | 既定の最安モデルが使われる |
+| `CRON_SECRET` | | cronエンドポイントが401のまま |
+| `NEXT_PUBLIC_APP_URL` | | 専用リンクがlocalhostを指す |
+| `LINE_CHANNEL_SECRET` / `..._ACCESS_TOKEN` | | LINE連携が無効 |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | | 決済が無効 |
+
+> `NEXT_PUBLIC_` で始まる変数は**ビルド時に埋め込まれます**。
+> 追加したあとは必ず **Redeploy** してください（変数を足すだけでは反映されません）。
+
+`NEXT_PUBLIC_APP_URL` は本番URL（例 `https://your-app.vercel.app`）に変更します。
+ここがlocalhostのままだと、計測用の専用リンクとLINEの通知リンクが機能しません。
+
+### ミドルウェアについて
+
+ミドルウェアはほぼ全リクエストを通るため、ここで例外を投げると
+**サイト全体が 500 `MIDDLEWARE_INVOCATION_FAILED` になります。**
+そのため環境変数が未設定でも素通しし、認証はレイアウト・ページ・APIルート側で
+必ず検証する構成にしています（多層防御）。設定漏れはVercelのログに
+`[middleware] ... が未設定です` として出ます。
+
+## 4. 定期実行（cron）
 
 `vercel.json` に設定済みです。Vercel 以外にデプロイする場合は、
 `Authorization: Bearer $CRON_SECRET` を付けて次を叩いてください。
@@ -156,7 +190,7 @@ X / Facebook / Instagram / Googleビジネスプロフィール / WordPress に�
 
 ---
 
-## 4. 成果の計測
+## 5. 成果の計測
 
 投稿ごとに専用リンク `/t/<code>` が発行され、クリックすると訪問者IDを Cookie に保存して
 接触履歴（初回 / 中間 / 最終）を記録します。
@@ -177,7 +211,7 @@ fetch("https://<ドメイン>/api/track", {
 
 ---
 
-## 5. 構成
+## 6. 構成
 
 ```
 src/
@@ -229,7 +263,7 @@ scripts/
 
 ---
 
-## 6. 設計上の要点
+## 7. 設計上の要点
 
 **発信しない判断をする。** AIストラテジストは毎日「今日発信すべきか」を判断し、
 発信価値の高い材料がない日は `should_post: false` を返します。その日は情報収集・
@@ -254,7 +288,7 @@ OpenRouter が未設定でも動作し、AIの検査結果と統合されます�
 
 ---
 
-## 7. コマンド
+## 8. コマンド
 
 ```bash
 npm run dev         # 開発サーバー

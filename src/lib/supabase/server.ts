@@ -3,13 +3,26 @@ import { cookies } from "next/headers";
 
 type CookiesToSet = Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0];
 
+/** 未設定の環境変数を、原因が分かる形で知らせる。 */
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `環境変数 ${name} が設定されていません。` +
+        `Vercel の Project Settings → Environment Variables に追加し、再デプロイしてください。` +
+        `(ローカルでは .env.local に記載します)`,
+    );
+  }
+  return value;
+}
+
 /** Request-scoped Supabase client that respects the signed-in user + RLS. */
 export async function supabaseServer() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
       cookies: {
         getAll() {
