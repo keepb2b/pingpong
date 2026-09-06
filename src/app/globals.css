@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   AI広報 — design tokens
+   ========================================================================== */
+@theme {
+  --font-sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+    "Yu Gothic UI", Meiryo, system-ui, -apple-system, sans-serif;
+
+  --color-ink-50: #f6f7fb;
+  --color-ink-100: #eceef6;
+  --color-ink-200: #d8dcea;
+  --color-ink-300: #b4bbd2;
+  --color-ink-400: #8d96b5;
+  --color-ink-500: #6b7599;
+  --color-ink-600: #515a7c;
+  --color-ink-700: #3d4462;
+  --color-ink-800: #262b41;
+  --color-ink-900: #161a29;
+  --color-ink-950: #0c0e18;
+
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  /* 6人の専門AI — agent identity colors */
+  --color-secretary: #6366f1;
+  --color-strategist: #0ea5e9;
+  --color-writer: #10b981;
+  --color-marketer: #f59e0b;
+  --color-analyst: #06b6d4;
+  --color-creator: #ec4899;
+
+  --color-good: #10b981;
+  --color-warn: #f59e0b;
+  --color-bad: #ef4444;
+
+  --radius-card: 16px;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-orbit: orbit 12s linear infinite;
+  --animate-spin-slow: spin 9s linear infinite;
+  --animate-draw: draw 2.4s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.2s linear infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-typing: typing 1.4s ease-in-out infinite;
+  --animate-scan: scan 3s ease-in-out infinite;
+  --animate-bar: bar 2.6s ease-in-out infinite;
+  --animate-wave: wave 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes draw {
+  0% { stroke-dashoffset: 120; }
+  45% { stroke-dashoffset: 0; }
+  85% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -120; }
+}
+@keyframes shimmer {
+  0% { background-position: -220% 0; }
+  100% { background-position: 220% 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes scan {
+  0%, 100% { transform: translateY(-5px); opacity: 0.25; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+@keyframes bar {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+@keyframes wave {
+  0%, 100% { d: path("M2 12 Q 7 6, 12 12 T 22 12"); }
+  50% { d: path("M2 12 Q 7 18, 12 12 T 22 12"); }
+}
+
+/* ==========================================================================
+   base
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-2: #f6f7fb;
+  --surface-3: #eceef6;
+  --border: #e3e6f0;
+  --text: #161a29;
+  --text-muted: #6b7599;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: #12162a;
+  --surface-2: #0c0e18;
+  --surface-3: #1b2038;
+  --border: #262b41;
+  --text: #eceef6;
+  --text-muted: #8d96b5;
+}
+
+* { border-color: var(--border); }
+
+body {
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt" 1;
+}
+
+/* ==========================================================================
+   components
+   ========================================================================== */
+@utility card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+@utility muted {
+  color: var(--text-muted);
+}
+
+@utility surface-2 {
+  background: var(--surface-2);
+}
+
+@utility surface-3 {
+  background: var(--surface-3);
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-3) 25%,
+    var(--surface) 50%,
+    var(--surface-3) 75%
+  );
+  background-size: 220% 100%;
+  animation: var(--animate-shimmer);
+}
+
+.aurora {
+  background:
+    radial-gradient(60rem 30rem at 15% -10%, color-mix(in oklab, var(--color-brand-500) 22%, transparent), transparent 60%),
+    radial-gradient(45rem 26rem at 90% 0%, color-mix(in oklab, var(--color-creator) 16%, transparent), transparent 60%),
+    radial-gradient(50rem 30rem at 50% 110%, color-mix(in oklab, var(--color-analyst) 14%, transparent), transparent 60%);
+}
+
+.grid-lines {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+
+/* nice scrollbars inside panels */
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 999px;
+}
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* staggered entry for lists */
+.stagger > * { animation: var(--animate-rise); }
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger > *:nth-child(6) { animation-delay: 0.22s; }
+.stagger > *:nth-child(7) { animation-delay: 0.26s; }
+.stagger > *:nth-child(8) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   data visualization tokens (validated palette — see charts.tsx)
+   ========================================================================== */
+.viz-root {
+  --viz-surface: var(--surface);
+  --viz-grid: color-mix(in oklab, var(--border) 75%, transparent);
+  --viz-axis: var(--text-muted);
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+
+  --ord-1: #86b6ef;
+  --ord-2: #5598e7;
+  --ord-3: #2a78d6;
+  --ord-4: #1c5cab;
+  --ord-5: #104281;
+
+  --seq: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .viz-root {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+
+    --ord-1: #b7d3f6;
+    --ord-2: #86b6ef;
+    --ord-3: #5598e7;
+    --ord-4: #2a78d6;
+    --ord-5: #184f95;
+
+    --seq: #3987e5;
+  }
+}
+
+.dark .viz-root,
+:root[data-theme="dark"] .viz-root {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+
+  --ord-1: #b7d3f6;
+  --ord-2: #86b6ef;
+  --ord-3: #5598e7;
+  --ord-4: #2a78d6;
+  --ord-5: #184f95;
+
+  --seq: #3987e5;
+}
