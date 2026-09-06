@@ -73,7 +73,7 @@ export default async function MediaPage() {
                   const outlet = p.media_outlets as unknown as { name: string } | null;
                   const st = PITCH_STATUS[p.status] ?? PITCH_STATUS.draft;
                   return (
-                    <li key={p.id} className="p-4 rounded-xl border border-[var(--border)]">
+                    <li key={p.id} className="p-4 rounded-[4px] border border-[var(--border)]">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <Badge tone={st.tone}>{st.label}</Badge>
                         {outlet && <span className="text-xs font-medium">{outlet.name}</span>}

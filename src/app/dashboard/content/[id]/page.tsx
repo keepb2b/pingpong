@@ -184,7 +184,7 @@ export default async function ContentDetail({ params }: { params: Promise<{ id: 
               />
               <div className="grid sm:grid-cols-2 gap-3">
                 {creatives.map((cr) => (
-                  <figure key={cr.id} className="rounded-xl overflow-hidden border border-[var(--border)]">
+                  <figure key={cr.id} className="rounded-[4px] overflow-hidden border border-[var(--border)]">
                     <div
                       className="w-full [&>svg]:w-full [&>svg]:h-auto [&>svg]:block"
                       dangerouslySetInnerHTML={{ __html: cr.svg ?? "" }}

@@ -111,7 +111,7 @@ export default async function CrisisPage() {
                     {inc.statement && (
                       <section>
                         <h3 className="text-xs font-semibold mb-1.5">公式声明案</h3>
-                        <p className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-xl bg-[var(--surface-2)]">
+                        <p className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-[4px] bg-[var(--surface-2)]">
                           {inc.statement}
                         </p>
                       </section>
@@ -120,7 +120,7 @@ export default async function CrisisPage() {
                     {inc.apology && (
                       <section>
                         <h3 className="text-xs font-semibold mb-1.5">お詫び文</h3>
-                        <p className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-xl bg-[var(--surface-2)]">
+                        <p className="text-xs leading-relaxed whitespace-pre-wrap p-3 rounded-[4px] bg-[var(--surface-2)]">
                           {inc.apology}
                         </p>
                       </section>

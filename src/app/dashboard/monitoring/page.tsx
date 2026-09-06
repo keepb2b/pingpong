@@ -56,7 +56,7 @@ export default async function MonitoringPage() {
                 {signals.map((s) => (
                   <li
                     key={s.id}
-                    className="p-3.5 rounded-xl border border-[var(--border)] flex items-start gap-3"
+                    className="p-3.5 rounded-[4px] border border-[var(--border)] flex items-start gap-3"
                   >
                     <span
                       className="mt-1.5 h-2 w-2 rounded-full shrink-0"

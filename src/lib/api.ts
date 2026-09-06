@@ -33,6 +33,26 @@ export function requireRole(ctx: OrgContext, minimum: string) {
   }
 }
 
+/** 運営管理者(プラットフォーム全体の管理者)であることを保証する。 */
+export async function requirePlatformAdmin(): Promise<{ userId: string; email: string }> {
+  const { getSessionUser } = await import("@/lib/supabase/server");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+
+  const user = await getSessionUser();
+  if (!user) throw new ApiError("認証が必要です", 401);
+
+  const { data } = await supabaseAdmin()
+    .from("profiles")
+    .select("is_platform_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!data?.is_platform_admin) {
+    throw new ApiError("運営管理者の権限が必要です", 403);
+  }
+  return { userId: user.id, email: user.email ?? "" };
+}
+
 export function requireSubject(ctx: OrgContext): string {
   if (!ctx.subjectId) throw new ApiError("広報対象が登録されていません", 400);
   return ctx.subjectId;

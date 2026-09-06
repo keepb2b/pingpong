@@ -105,7 +105,7 @@ export default async function StrategyPage() {
                       {(
                         latest.goals as Array<{ goal: string; why: string; kpi: string; target: number }>
                       ).map((g, i) => (
-                        <li key={i} className="p-3 rounded-xl bg-[var(--surface-2)] text-xs">
+                        <li key={i} className="p-3 rounded-[4px] bg-[var(--surface-2)] text-xs">
                           <div className="flex items-center gap-2">
                             <Badge tone="brand">
                               {GOAL_LABEL[g.goal as keyof typeof GOAL_LABEL] ?? g.goal}
@@ -133,7 +133,7 @@ export default async function StrategyPage() {
                       .slice()
                       .sort((a, b) => (a.priority ?? 9) - (b.priority ?? 9))
                       .map((t, i) => (
-                        <li key={i} className="p-4 rounded-xl border border-[var(--border)]">
+                        <li key={i} className="p-4 rounded-[4px] border border-[var(--border)]">
                           <div className="flex items-start justify-between gap-3">
                             <p className="text-sm font-medium">{t.theme}</p>
                             <Badge>優先度 {t.priority}</Badge>
@@ -161,7 +161,7 @@ export default async function StrategyPage() {
                     {(
                       latest.calendar as Array<{ week: number; focus: string; deliverables: string[] }>
                     ).map((w) => (
-                      <li key={w.week} className="flex gap-3 p-3 rounded-xl bg-[var(--surface-2)]">
+                      <li key={w.week} className="flex gap-3 p-3 rounded-[4px] bg-[var(--surface-2)]">
                         <span className="text-xs font-bold tabular-nums shrink-0 w-12 text-brand-600">
                           第{w.week}週
                         </span>

@@ -21,7 +21,7 @@ export function OpenCrisis({ subjectId }: { subjectId: string }) {
       </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="危機広報モードを開始">
-        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 mb-4">
+        <div className="p-3 rounded-[4px] bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 mb-4">
           <p className="text-xs leading-relaxed">
             開始すると、この広報対象の<strong>予約投稿がすべて停止</strong>されます。
             通常運用への復帰には、担当者の承認が必要です。

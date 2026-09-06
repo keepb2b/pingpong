@@ -24,7 +24,7 @@ export function SubjectSwitcher({
     return (
       <Link
         href="/dashboard/settings"
-        className="block px-3 py-2 rounded-xl border border-dashed border-[var(--border)] text-xs muted hover:text-[var(--text)] text-center"
+        className="block px-3 py-2 rounded-[4px] border border-dashed border-[var(--border)] text-xs muted hover:text-[var(--text)] text-center"
       >
         広報対象を登録する
       </Link>
@@ -35,9 +35,9 @@ export function SubjectSwitcher({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border)] hover:bg-[var(--surface-3)] transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-[4px] border border-[var(--border)] hover:bg-[var(--surface-3)] transition-colors text-left"
       >
-        <span className="h-6 w-6 shrink-0 rounded-lg bg-brand-600 text-white text-[11px] font-bold grid place-items-center">
+        <span className="h-6 w-6 shrink-0 rounded-[3px] bg-brand-600 text-white text-[11px] font-bold grid place-items-center">
           {active.name.slice(0, 1)}
         </span>
         <span className="min-w-0 flex-1">
@@ -64,7 +64,7 @@ export function SubjectSwitcher({
                   s.id === active.id ? "bg-brand-50 dark:bg-brand-900/25" : ""
                 }`}
               >
-                <span className="h-5 w-5 shrink-0 rounded-md bg-[var(--surface-3)] text-[10px] font-bold grid place-items-center">
+                <span className="h-5 w-5 shrink-0 rounded-[3px] bg-[var(--surface-3)] text-[10px] font-bold grid place-items-center">
                   {s.name.slice(0, 1)}
                 </span>
                 <span className="truncate">{s.name}</span>

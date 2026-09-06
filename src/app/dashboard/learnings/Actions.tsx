@@ -79,7 +79,7 @@ export function LearningRow({
   }
 
   return (
-    <li className="p-4 rounded-xl border border-[var(--border)]">
+    <li className="p-4 rounded-[4px] border border-[var(--border)]">
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
         <Badge>{category}</Badge>
         <span className="ml-auto muted text-[11px] tabular-nums">{createdAt}</span>

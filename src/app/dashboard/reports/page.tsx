@@ -63,7 +63,7 @@ export default async function ReportsPage({
                 <a
                   key={r.period}
                   href={`/dashboard/reports?period=${r.period}`}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors
+                  className={`px-3 py-1.5 rounded-[3px] text-xs font-medium border transition-colors
                     ${
                       r.period === report.period
                         ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200"
@@ -290,7 +290,7 @@ function ReportList({
       <CardHeader title={title} />
       <ul className="space-y-2.5">
         {list.map((r, i) => (
-          <li key={i} className="p-3 rounded-xl bg-[var(--surface-2)]">
+          <li key={i} className="p-3 rounded-[4px] bg-[var(--surface-2)]">
             {render(r)}
           </li>
         ))}

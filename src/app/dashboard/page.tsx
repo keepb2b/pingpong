@@ -4,7 +4,8 @@ import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile, EmptyState, statusTone, riskTone } from "@/components/ui";
 import { PageHeader, AgentButton, formatDateTime } from "@/components/dashboard/shared";
 import { ScoreRing } from "@/components/charts";
-import { AgentIcon, LineIcon, LoopIcon, SparkIcon } from "@/components/icons/AgentIcons";
+import { AgentIcon, LineIcon, LoopIcon } from "@/components/icons/AgentIcons";
+import { DocumentIcon } from "@/components/icons/NavIcons";
 import {
   AGENTS,
   CHANNEL_LABEL,
@@ -197,7 +198,7 @@ export default async function DashboardHome() {
 
             {!pending?.length ? (
               <EmptyState
-                icon={<SparkIcon size={30} />}
+                icon={<DocumentIcon size={28} />}
                 title="承認待ちの広報案はありません"
                 body="AI秘書が新しい広報材料を集めると、ここに提案が並びます。"
               />
@@ -207,7 +208,7 @@ export default async function DashboardHome() {
                   <li key={c.id}>
                     <Link
                       href={`/dashboard/content/${c.id}`}
-                      className="block p-3.5 rounded-xl border border-[var(--border)] hover:border-brand-300 hover:bg-[var(--surface-2)] transition-colors"
+                      className="block p-3.5 rounded-[4px] border border-[var(--border)] hover:border-brand-300 hover:bg-[var(--surface-2)] transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-medium leading-snug line-clamp-2">{c.title}</p>
@@ -253,7 +254,7 @@ export default async function DashboardHome() {
             ) : (
               <ul className="space-y-2.5 stagger">
                 {proposals.map((p) => (
-                  <li key={p.id} className="p-3.5 rounded-xl border border-[var(--border)]">
+                  <li key={p.id} className="p-3.5 rounded-[4px] border border-[var(--border)]">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-medium">{p.theme}</p>
                       <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>

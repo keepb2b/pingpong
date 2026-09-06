@@ -64,7 +64,7 @@ export function KarteEditor({
                   setOpen(s.key);
                   setDraft(content);
                 }}
-                className="w-full text-left py-3 flex items-start gap-3 hover:bg-[var(--surface-2)] px-2 -mx-2 rounded-lg transition-colors"
+                className="w-full text-left py-3 flex items-start gap-3 hover:bg-[var(--surface-2)] px-2 -mx-2 rounded-[3px] transition-colors"
               >
                 <span
                   className={`mt-1 h-2 w-2 rounded-full shrink-0 ${
@@ -168,7 +168,7 @@ export function BrandVoiceEditor({
               <button
                 key={t}
                 onClick={() => set("tone", on ? v.tone.filter((x) => x !== t) : [...v.tone, t])}
-                className={`px-2.5 py-1 rounded-lg border text-[11px] transition-colors
+                className={`px-2.5 py-1 rounded-[3px] border text-[11px] transition-colors
                   ${on ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200" : "border-[var(--border)] muted hover:border-brand-300"}`}
               >
                 {t}

@@ -120,8 +120,46 @@ export async function POST(request: Request) {
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
         const orgId = await orgByCustomer(String(invoice.customer));
-        if (!orgId) break;
-        await sb.from("subscriptions").update({ status: "active" }).eq("org_id", orgId);
+        if (orgId) {
+          await sb.from("subscriptions").update({ status: "active" }).eq("org_id", orgId);
+        }
+        await recordPayment({
+          orgId,
+          paymentIntentId:
+            (invoice as unknown as { payment_intent?: string }).payment_intent ?? `inv_${invoice.id}`,
+          invoiceId: invoice.id ?? null,
+          customerId: String(invoice.customer ?? ""),
+          amount: invoice.amount_paid ?? 0,
+          currency: invoice.currency ?? "jpy",
+          status: "succeeded",
+          description: invoice.description ?? "AI広報 ご利用料金",
+          receiptUrl: invoice.hosted_invoice_url ?? null,
+          paidAt: new Date((invoice.created ?? Date.now() / 1000) * 1000).toISOString(),
+        });
+        break;
+      }
+
+      // 管理画面の決済履歴をリアルタイムに保つ
+      case "charge.succeeded":
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const customerId =
+          typeof charge.customer === "string" ? charge.customer : (charge.customer?.id ?? "");
+        await recordPayment({
+          orgId: customerId ? await orgByCustomer(customerId) : null,
+          paymentIntentId:
+            typeof charge.payment_intent === "string"
+              ? charge.payment_intent
+              : (charge.payment_intent?.id ?? charge.id),
+          invoiceId: typeof charge.invoice === "string" ? charge.invoice : (charge.invoice?.id ?? null),
+          customerId,
+          amount: charge.amount,
+          currency: charge.currency,
+          status: charge.refunded ? "refunded" : "succeeded",
+          description: charge.description ?? null,
+          receiptUrl: charge.receipt_url ?? null,
+          paidAt: new Date(charge.created * 1000).toISOString(),
+        });
         break;
       }
 
@@ -134,6 +172,38 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+/** 決済履歴を payments に記録する (管理画面のリアルタイム表示用)。 */
+async function recordPayment(p: {
+  orgId: string | null;
+  paymentIntentId: string;
+  invoiceId: string | null;
+  customerId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  description: string | null;
+  receiptUrl: string | null;
+  paidAt: string;
+}) {
+  await supabaseAdmin()
+    .from("payments")
+    .upsert(
+      {
+        org_id: p.orgId,
+        stripe_payment_intent_id: p.paymentIntentId,
+        stripe_invoice_id: p.invoiceId,
+        stripe_customer_id: p.customerId || null,
+        amount: p.amount,
+        currency: p.currency,
+        status: p.status,
+        description: p.description,
+        receipt_url: p.receiptUrl,
+        paid_at: p.paidAt,
+      },
+      { onConflict: "stripe_payment_intent_id" },
+    );
 }
 
 async function orgByCustomer(customerId: string): Promise<string | null> {

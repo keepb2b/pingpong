@@ -40,7 +40,7 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative p-2 muted hover:text-[var(--text)] rounded-lg hover:bg-[var(--surface-3)]"
+        className="relative p-2 muted hover:text-[var(--text)] rounded-[3px] hover:bg-[var(--surface-3)]"
         aria-label={`通知 ${unread}件`}
       >
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
@@ -54,7 +54,6 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
         </svg>
         {unread > 0 && (
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--surface)]">
-            <span className="absolute inset-0 rounded-full bg-red-500 animate-[pulse-ring_2s_ease-out_infinite]" />
           </span>
         )}
       </button>

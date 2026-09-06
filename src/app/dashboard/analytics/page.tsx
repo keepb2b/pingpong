@@ -254,7 +254,7 @@ export default async function AnalyticsPage() {
               title="成果の計測方法"
               subtitle="自社サイトのフォーム送信時に、この計測エンドポイントを呼び出してください。"
             />
-            <pre className="text-[10px] leading-relaxed p-3 rounded-lg bg-[var(--surface-3)] overflow-x-auto scroll-thin">
+            <pre className="text-[10px] leading-relaxed p-3 rounded-[3px] bg-[var(--surface-3)] overflow-x-auto scroll-thin">
               {`fetch("/api/track", {
   method: "POST",
   headers: { "Content-Type": "application/json" },

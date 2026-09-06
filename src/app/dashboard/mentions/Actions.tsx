@@ -39,7 +39,7 @@ export function MentionRow({
   const [draft, setDraft] = useState(reply?.draft ?? "");
 
   return (
-    <li className="p-4 rounded-xl border border-[var(--border)]">
+    <li className="p-4 rounded-[4px] border border-[var(--border)]">
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
         <Badge>{mention.source}</Badge>
         {mention.rating != null && <Badge tone={mention.rating >= 4 ? "good" : "warn"}>★{mention.rating}</Badge>}

@@ -14,7 +14,8 @@ import {
   toast,
   ProgressBar,
 } from "@/components/ui";
-import { AgentIcon, SparkIcon } from "@/components/icons/AgentIcons";
+import { AgentIcon, LineIcon } from "@/components/icons/AgentIcons";
+import { Logo } from "@/components/Logo";
 import {
   AGENTS,
   GOALS,
@@ -265,7 +266,7 @@ export function OnboardingWizard({
                       on ? prev.filter((x) => x !== g.key) : [...prev, g.key],
                     )
                   }
-                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left text-sm transition-all
+                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-[4px] border text-left text-sm transition-all
                     ${on ? "border-brand-500 bg-brand-50 dark:bg-brand-900/25" : "border-[var(--border)] hover:border-brand-300"}`}
                 >
                   <span
@@ -343,7 +344,7 @@ export function OnboardingWizard({
                           tone: on ? voice.tone.filter((x) => x !== t) : [...voice.tone, t],
                         })
                       }
-                      className={`px-3 py-1.5 rounded-lg border text-xs transition-colors
+                      className={`px-3 py-1.5 rounded-[3px] border text-xs transition-colors
                         ${on ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200" : "border-[var(--border)] muted hover:border-brand-300"}`}
                     >
                       {t}
@@ -529,7 +530,7 @@ export function OnboardingWizard({
             ) : (
               <>
                 <span className="text-brand-600 inline-block">
-                  <SparkIcon size={32} />
+                  <LineIcon size={32} />
                 </span>
                 <p className="text-sm mt-3">連携コードを発行してください</p>
                 <Button
@@ -588,13 +589,9 @@ function Shell({
 }) {
   return (
     <main className="min-h-dvh py-10 px-5 relative">
-      <div className="absolute inset-0 aurora" aria-hidden />
       <div className="relative mx-auto max-w-2xl">
-        <div className="flex items-center justify-center gap-2 font-bold mb-6">
-          <span className="text-brand-600">
-            <SparkIcon size={20} />
-          </span>
-          AI広報
+        <div className="flex items-center justify-center mb-6">
+          <Logo size={28} />
         </div>
         <Card className="p-6 sm:p-8">{children}</Card>
         {total > 1 && (

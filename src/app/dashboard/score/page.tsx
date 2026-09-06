@@ -89,7 +89,7 @@ export default async function ScorePage() {
                     .map((im, i) => {
                       const dim = SCORE_DIMENSIONS.find((d) => d.key === im.dimension);
                       return (
-                        <li key={i} className="p-4 rounded-xl border border-[var(--border)]">
+                        <li key={i} className="p-4 rounded-[4px] border border-[var(--border)]">
                           <div className="flex items-center gap-2 mb-1.5">
                             <span className="h-5 w-5 rounded-full bg-brand-600 text-white grid place-items-center text-[10px] font-bold shrink-0">
                               {im.priority ?? i + 1}

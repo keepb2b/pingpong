@@ -89,7 +89,7 @@ export default async function LearningsPage() {
                 return (
                   <li
                     key={l.id}
-                    className="p-3.5 rounded-xl border border-[var(--border)] flex items-start gap-3"
+                    className="p-3.5 rounded-[4px] border border-[var(--border)] flex items-start gap-3"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">

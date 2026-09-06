@@ -100,9 +100,9 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
                   )}
                 </span>
               </div>
-              <div className="h-7 rounded-md overflow-hidden bg-[var(--surface-3)]">
+              <div className="h-7 rounded-[3px] overflow-hidden bg-[var(--surface-3)]">
                 <div
-                  className="h-full rounded-md transition-[width,opacity] duration-500 ease-out"
+                  className="h-full rounded-[3px] transition-[width,opacity] duration-500 ease-out"
                   style={{
                     width: `${Math.max(pct, 1.5)}%`,
                     background: `var(--ord-${Math.min(i + 1, 5)})`,
@@ -111,7 +111,7 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
                 />
               </div>
               {hover === i && s.hint && (
-                <div className="absolute z-10 left-0 top-full mt-1 px-2.5 py-1.5 rounded-lg bg-ink-900 text-white text-[11px] shadow-lg max-w-xs">
+                <div className="absolute z-10 left-0 top-full mt-1 px-2.5 py-1.5 rounded-[3px] bg-ink-900 text-white text-[11px] shadow-lg max-w-xs">
                   {s.hint}
                 </div>
               )}
@@ -156,9 +156,9 @@ export function ScoreBars({
               <span className="text-xs truncate" title={it.label}>
                 {it.label}
               </span>
-              <div className="h-5 rounded-md overflow-hidden bg-[var(--surface-3)] relative">
+              <div className="h-5 rounded-[3px] overflow-hidden bg-[var(--surface-3)] relative">
                 <div
-                  className="h-full rounded-md transition-[width] duration-700 ease-out"
+                  className="h-full rounded-[3px] transition-[width] duration-700 ease-out"
                   style={{
                     width: `${Math.max(it.value, 1)}%`,
                     background: weak ? "var(--ord-2)" : "var(--seq)",
@@ -399,9 +399,9 @@ export function ChannelBars({
               />
               {it.label}
             </span>
-            <div className="h-5 rounded-md overflow-hidden bg-[var(--surface-3)]">
+            <div className="h-5 rounded-[3px] overflow-hidden bg-[var(--surface-3)]">
               <div
-                className="h-full rounded-md transition-[width] duration-500 ease-out"
+                className="h-full rounded-[3px] transition-[width] duration-500 ease-out"
                 style={{
                   width: `${Math.max((it.value / max) * 100, 1)}%`,
                   background: `var(--series-${(i % 5) + 1})`,

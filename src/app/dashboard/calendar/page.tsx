@@ -98,7 +98,7 @@ export default async function CalendarPage() {
                       {list.map((p) => (
                         <li
                           key={p.id}
-                          className="p-3.5 rounded-xl border border-[var(--border)] hover:border-brand-300 transition-colors"
+                          className="p-3.5 rounded-[4px] border border-[var(--border)] hover:border-brand-300 transition-colors"
                         >
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-semibold tabular-nums">
@@ -152,7 +152,7 @@ export default async function CalendarPage() {
               <CardHeader title="停止・失敗した投稿" />
               <ul className="space-y-2">
                 {failed.map((p) => (
-                  <li key={p.id} className="text-xs p-3 rounded-xl bg-[var(--surface-2)]">
+                  <li key={p.id} className="text-xs p-3 rounded-[4px] bg-[var(--surface-2)]">
                     <div className="flex items-center gap-2">
                       <Badge tone="info">{CHANNEL_LABEL[p.channel as ChannelKey] ?? p.channel}</Badge>
                       <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>

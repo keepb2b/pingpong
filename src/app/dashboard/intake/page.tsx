@@ -76,7 +76,7 @@ export default async function IntakePage() {
             ) : (
               <ul className="space-y-3 stagger">
                 {unused.map((i) => (
-                  <li key={i.id} className="p-4 rounded-xl border border-[var(--border)]">
+                  <li key={i.id} className="p-4 rounded-[4px] border border-[var(--border)]">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-medium leading-snug">{i.title}</p>
                       <div className="flex gap-1.5 shrink-0">
@@ -164,7 +164,7 @@ export default async function IntakePage() {
                       <span className="muted tabular-nums">{formatDateTime(c.last_message_at)}</span>
                     </div>
                     {c.pending_question && (
-                      <p className="mt-1.5 leading-relaxed p-2 rounded-lg bg-[var(--surface-3)]">
+                      <p className="mt-1.5 leading-relaxed p-2 rounded-[3px] bg-[var(--surface-3)]">
                         {c.pending_question}
                       </p>
                     )}
@@ -187,12 +187,12 @@ export default async function IntakePage() {
                       key={a.id}
                       src={a.url ?? ""}
                       alt={a.caption ?? "受け取った写真"}
-                      className="aspect-square object-cover rounded-lg border border-[var(--border)]"
+                      className="aspect-square object-cover rounded-[3px] border border-[var(--border)]"
                     />
                   ) : (
                     <div
                       key={a.id}
-                      className="aspect-square rounded-lg border border-[var(--border)] grid place-items-center text-[10px] muted"
+                      className="aspect-square rounded-[3px] border border-[var(--border)] grid place-items-center text-[10px] muted"
                     >
                       {a.kind}
                     </div>

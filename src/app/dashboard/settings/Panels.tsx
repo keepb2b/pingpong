@@ -58,7 +58,7 @@ export function LineLinkPanel({
       )}
 
       {code ? (
-        <div className="p-4 rounded-xl bg-[var(--surface-2)] text-center">
+        <div className="p-4 rounded-[4px] bg-[var(--surface-2)] text-center">
           <p className="muted text-xs">連携コード</p>
           <p className="mt-1.5 text-3xl font-bold tracking-[0.3em] tabular-nums">{code}</p>
           <p className="muted text-[11px] mt-2 leading-relaxed">
@@ -140,7 +140,7 @@ export function DialoguePanel({
                         : [...s.custom_days, i],
                     })
                   }
-                  className={`h-9 w-9 rounded-lg border text-xs font-medium transition-colors
+                  className={`h-9 w-9 rounded-[3px] border text-xs font-medium transition-colors
                     ${on ? "border-brand-500 bg-brand-600 text-white" : "border-[var(--border)] muted hover:border-brand-300"}`}
                 >
                   {w}
@@ -240,7 +240,7 @@ export function ChannelPanel({
         {channels.map((c) => (
           <li
             key={c.type}
-            className="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-[var(--border)]"
+            className="flex flex-wrap items-center gap-2 p-3 rounded-[4px] border border-[var(--border)]"
           >
             <span className="text-sm font-medium">{CHANNEL_LABEL[c.type as ChannelKey] ?? c.type}</span>
             <Badge tone={c.connected ? "good" : "neutral"}>{c.connected ? "連携済み" : "未連携"}</Badge>
@@ -317,7 +317,7 @@ function ChannelModal({
         )}
 
         {c.frequency_mode === "ai_auto" && (
-          <p className="text-xs muted leading-relaxed p-3 rounded-xl bg-[var(--surface-2)]">
+          <p className="text-xs muted leading-relaxed p-3 rounded-[4px] bg-[var(--surface-2)]">
             広報目的・KPI・保有する素材・過去の成果・季節・市場・競合・承認負担から、
             AIが最適な頻度を判断します。発信価値の高い情報がない日は投稿しません。
           </p>
@@ -422,7 +422,7 @@ export function ObjectivesPanel({
               onClick={() =>
                 setGoals((prev) => (on ? prev.filter((x) => x !== g.key) : [...prev, g.key]))
               }
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left text-xs transition-colors
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-[4px] border text-left text-xs transition-colors
                 ${on ? "border-brand-500 bg-brand-50 dark:bg-brand-900/25" : "border-[var(--border)] hover:border-brand-300"}`}
             >
               <span
@@ -584,7 +584,7 @@ export function SubjectsPanel({
       <ul className="space-y-2 mb-3">
         {subjects.map((s) => (
           <li key={s.id} className="flex items-center gap-2 text-sm">
-            <span className="h-6 w-6 rounded-lg bg-[var(--surface-3)] grid place-items-center text-[11px] font-bold shrink-0">
+            <span className="h-6 w-6 rounded-[3px] bg-[var(--surface-3)] grid place-items-center text-[11px] font-bold shrink-0">
               {s.name.slice(0, 1)}
             </span>
             <span className="truncate">{s.name}</span>
@@ -730,7 +730,7 @@ export function MembersPanel({
         {token ? (
           <div>
             <p className="text-xs muted mb-2">招待リンクを共有してください。</p>
-            <code className="block p-3 rounded-xl bg-[var(--surface-3)] text-[11px] font-mono break-all">
+            <code className="block p-3 rounded-[4px] bg-[var(--surface-3)] text-[11px] font-mono break-all">
               {typeof window !== "undefined" ? window.location.origin : ""}/signup?invite={token}
             </code>
           </div>
