@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -17,7 +17,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
-    "next": "15.1.6",
+    "next": "15.1.12",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "stripe": "^17.5.0"
