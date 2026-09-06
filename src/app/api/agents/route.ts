@@ -10,7 +10,6 @@ import { secretaryDailyPrompt } from "@/lib/agents/secretary";
 import type { ChannelKey, ContentTypeKey } from "@/lib/constants";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
 
 /**
  * 6人の専門AIを手動で起動するエンドポイント。

@@ -5,7 +5,6 @@ import { createTrackingLink, appUrl } from "@/lib/tracking";
 import type { ChannelKey } from "@/lib/constants";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
 
 /** 広報材料・コンテンツ・投稿・学習内容の操作 */
 export async function POST(request: Request) {

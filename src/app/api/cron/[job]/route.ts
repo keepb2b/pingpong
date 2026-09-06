@@ -11,7 +11,6 @@ import { isLineConfigured, pushMessage, textMessage } from "@/lib/line";
 import { scanForSignals } from "@/lib/monitor";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 type Job = "daily" | "interview" | "publish" | "monitor" | "monthly";
@@ -29,17 +28,17 @@ async function run(request: Request, { params }: { params: Promise<{ job: string
   }
 
   const { job } = await params;
-  const sb = supabaseAdmin();
 
   try {
     switch (job as Job) {
-      // 予約時刻を過ぎた投稿を配信する (5〜15分おき)
+      // 予約時刻を過ぎた投稿を配信する (Hobby では1日1回)
       case "publish": {
         const result = await publishDuePosts();
         return NextResponse.json({ ok: true, job, ...result });
       }
 
       // 毎日の広報活動 (戦略判断 → 制作 → 検査 → 承認依頼)
+      // Hobby は1日1回までなので、ヒアリング・監視・月初の月次もここでまとめて回す。
       case "daily": {
         const subjects = await activeSubjects();
         const results = [];
@@ -53,12 +52,51 @@ async function run(request: Request, { params }: { params: Promise<{ job: string
             });
           }
         }
-        return NextResponse.json({ ok: true, job, count: results.length, results });
+
+        const extras: Record<string, unknown> = {};
+        try {
+          extras.interview = await runInterviews({ ignoreHour: true });
+        } catch (err) {
+          extras.interview = { error: err instanceof Error ? err.message : String(err) };
+        }
+        try {
+          let signals = 0;
+          for (const s of subjects) {
+            try {
+              signals += (await scanForSignals(s.id)).length;
+            } catch {
+              // 1社の失敗で全体を止めない
+            }
+          }
+          extras.monitor = { subjects: subjects.length, signals };
+        } catch (err) {
+          extras.monitor = { error: err instanceof Error ? err.message : String(err) };
+        }
+
+        const now = new Date();
+        const jst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+        if (jst.getDate() === 1) {
+          const period = previousPeriod();
+          const monthly = [];
+          for (const s of subjects) {
+            try {
+              monthly.push({ subject: s.name, ...(await runMonthlyReview(s.id, period)) });
+            } catch (err) {
+              monthly.push({
+                subject: s.name,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
+          }
+          extras.monthly = { period, results: monthly };
+        }
+
+        return NextResponse.json({ ok: true, job, count: results.length, results, extras });
       }
 
       // 対話頻度の設定に従ってAI秘書からヒアリングを送る
       case "interview": {
-        const sent = await runInterviews();
+        const sent = await runInterviews({ ignoreHour: true });
         return NextResponse.json({ ok: true, job, ...sent });
       }
 
@@ -129,7 +167,7 @@ async function activeSubjects(): Promise<Array<{ id: string; org_id: string; nam
 }
 
 /** 曜日と設定に従って本日ヒアリングすべき対象を選ぶ。 */
-async function runInterviews(): Promise<{ sent: number; skipped: number }> {
+async function runInterviews(opts?: { ignoreHour?: boolean }): Promise<{ sent: number; skipped: number }> {
   const sb = supabaseAdmin();
   const now = new Date();
   const jstHour = Number(
@@ -149,7 +187,7 @@ async function runInterviews(): Promise<{ sent: number; skipped: number }> {
   let skipped = 0;
 
   for (const s of settings ?? []) {
-    if (!shouldInterviewToday(s, jstDay) || s.send_hour !== jstHour) {
+    if (!shouldInterviewToday(s, jstDay) || (!opts?.ignoreHour && s.send_hour !== jstHour)) {
       skipped++;
       continue;
     }

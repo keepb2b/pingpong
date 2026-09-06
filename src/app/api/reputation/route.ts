@@ -4,7 +4,6 @@ import { notify } from "@/lib/agents/orchestrator";
 import { appUrl } from "@/lib/tracking";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
 
 /** コメント・口コミ / 危機広報 / メディアリレーション */
 export async function POST(request: Request) {
