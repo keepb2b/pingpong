@@ -3,6 +3,9 @@ import { buildSubjectContext } from "@/lib/agents/context";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { ChannelKey } from "@/lib/constants";
 
+const FONT_SANS = "'Noto Sans JP', sans-serif";
+const FONT_SERIF = "'Noto Serif JP', serif";
+
 const SYSTEM = `あなたは日本企業のブランドに合わせたクリエイティブを設計する「AIクリエイター」です。
 SNS画像・バナー・サムネイル・アイキャッチの構成を設計します。
 
@@ -254,7 +257,7 @@ export function renderCreativeSvg(
   const head = headLines
     .map((l, i) => {
       const y = cy + i * headSize * 1.28;
-      return `<text x="${x}" y="${y}" font-size="${headSize}" font-weight="700" fill="${p.text}" text-anchor="${anchor}" font-family="'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic UI',sans-serif" letter-spacing="0.01em">${esc(l)}</text>`;
+      return `<text x="${x}" y="${y}" font-size="${headSize}" font-weight="700" fill="${p.text}" text-anchor="${anchor}" font-family="${spec.layout === "editorial" ? FONT_SERIF : FONT_SANS}" letter-spacing="0.01em">${esc(l)}</text>`;
     })
     .join("");
 
@@ -263,7 +266,7 @@ export function renderCreativeSvg(
   const sub = subLines
     .map((l, i) => {
       const y = cy + i * subSize * 1.6;
-      return `<text x="${x}" y="${y}" font-size="${subSize}" fill="${p.muted}" text-anchor="${anchor}" font-family="'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif">${esc(l)}</text>`;
+      return `<text x="${x}" y="${y}" font-size="${subSize}" fill="${p.muted}" text-anchor="${anchor}" font-family="${FONT_SANS}">${esc(l)}</text>`;
     })
     .join("");
 
@@ -273,7 +276,7 @@ export function renderCreativeSvg(
               width="${Math.round(spec.badge.length * headSize * 0.42) + 28}" height="${Math.round(headSize * 0.78)}" fill="${p.accent}"/>
         <text x="${w - pad - (Math.round(spec.badge.length * headSize * 0.42) + 28) / 2}" y="${pad + headSize * 0.55}"
               font-size="${Math.round(headSize * 0.34)}" fill="#fff" text-anchor="middle" font-weight="700"
-              font-family="'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif">${esc(spec.badge)}</text>
+              font-family="${FONT_SANS}">${esc(spec.badge)}</text>
       </g>`
     : "";
 
@@ -297,11 +300,11 @@ export function renderCreativeSvg(
   ${motifSvg(spec.motif, w, h, p.accent)}
   <rect x="0" y="0" width="${w}" height="${Math.max(4, Math.round(h * 0.008))}" fill="url(#glow)"/>
   ${rule}
-  ${spec.eyebrow ? `<text x="${x}" y="${eyebrowY}" font-size="${Math.round(headSize * 0.32)}" fill="${p.accent}" text-anchor="${anchor}" font-weight="700" letter-spacing="0.12em" font-family="'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif">${esc(spec.eyebrow)}</text>` : ""}
+  ${spec.eyebrow ? `<text x="${x}" y="${eyebrowY}" font-size="${Math.round(headSize * 0.32)}" fill="${p.accent}" text-anchor="${anchor}" font-weight="700" letter-spacing="0.12em" font-family="${FONT_SANS}">${esc(spec.eyebrow)}</text>` : ""}
   ${head}
   ${sub}
   ${badge}
-  <text x="${pad}" y="${h - pad * 0.55}" font-size="${Math.round(headSize * 0.28)}" fill="${p.muted}" opacity="0.85" font-family="'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif">${esc(brandName)}</text>
+  <text x="${pad}" y="${h - pad * 0.55}" font-size="${Math.round(headSize * 0.28)}" fill="${p.muted}" opacity="0.85" font-family="${FONT_SANS}">${esc(brandName)}</text>
 </svg>`;
 }
 

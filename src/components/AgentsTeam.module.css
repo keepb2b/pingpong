@@ -1,0 +1,60 @@
+.team {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 24px 26px;
+  color: #123367;
+  background: var(--surface-2);
+}
+.heading { position: relative; z-index: 1; text-align: center; }
+.eyebrow { display: flex; align-items: center; justify-content: center; gap: 13px; font-size: 10px; letter-spacing: .35em; }
+.eyebrow::before, .eyebrow::after { content: ""; width: 48px; height: 1px; background: #bbd0e7; }
+.heading h2 { margin: 14px 0 8px; font-family: var(--font-noto-serif), "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: clamp(23px, 2.8vw, 34px); font-weight: 600; line-height: 1.6; letter-spacing: .045em; }
+.intro { font-size: 13px; line-height: 1.85; letter-spacing: .04em; }
+.scene { position: relative; height: 620px; margin-top: 16px; }
+.orbit { position: absolute; left: 17%; top: 19%; width: 66%; height: 55%; border: 1px solid var(--border); border-radius: 50%; transform: rotate(8deg); }
+.illustration { position: relative; flex: 0 0 52%; aspect-ratio: 1; }
+.illustration img { object-fit: contain; }
+.copy { flex: 1; min-width: 0; }
+.center { position: absolute; left: 50%; top: 43%; transform: translate(-50%, -50%); width: 190px; padding: 23px 8px; border-radius: 50%; text-align: center; font-size: 11px; line-height: 1.85; color: #215a9b; }
+.centerTitle { margin-bottom: 4px; font-family: var(--font-noto-serif), "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: 25px; font-weight: 600; }
+.members { list-style: none; padding: 0; margin: 0; }
+.member { position: absolute; display: flex; align-items: center; gap: 5px; width: 35%; }
+.badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 30px; background: #e2f2ff; color: #1262b6; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.member h3 { margin: 9px 0 6px; font-family: var(--font-noto-serif), "Yu Mincho", "Hiragino Mincho ProN", serif; font-size: 16px; font-weight: 600; line-height: 1.6; }
+.body { color: #3d5c86; font-size: 11px; line-height: 1.85; }
+.secretary { left: 1%; top: 0; flex-direction: row-reverse; }
+.strategist { left: 34%; top: 0; width: 30%; }
+.writer { right: 0; top: 15%; }
+.creator { right: 0; top: 53%; }
+.marketer { left: 32%; bottom: 0; width: 32%; flex-direction: column; gap: 0; }
+.marketer .illustration { width: 56%; flex: auto; margin-bottom: -12px; }
+.marketer .copy { width: 85%; }
+.analyst { left: 0; top: 48%; flex-direction: row-reverse; }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .scene { height: 570px; }
+  .member h3 { font-size: 14px; }
+  .body { font-size: 10px; }
+  .member { width: 36%; }
+  .illustration { flex-basis: 46%; }
+  .strategist { left: 33%; width: 31%; }
+  .marketer { width: 32%; }
+  .marketer .illustration { width: 64%; }
+}
+@media (max-width: 767px) {
+  .team { padding: 28px 20px; }
+  .heading h2 { font-size: 24px; }
+  .intro { font-size: 11px; }
+  .scene { height: auto; display: flex; flex-direction: column; }
+  .orbit { display: none; }
+  .center { position: relative; top: auto; left: auto; transform: none; align-self: center; margin: 8px 0 24px; width: 190px; border: 1px solid var(--border); }
+  .members { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 20px; }
+  .member { position: static; width: auto; flex-direction: column; gap: 0; align-items: stretch; }
+  .illustration, .marketer .illustration { width: 150px; max-width: 100%; flex: auto; margin: 0 auto 8px; }
+  .marketer .copy { width: auto; }
+  .member h3 { font-size: 15px; }
+}
+@media (max-width: 380px) {
+  .members { grid-template-columns: 1fr; gap: 22px; }
+  .member { flex-direction: row; align-items: center; gap: 12px; }
+  .illustration, .marketer .illustration { flex: 0 0 100px; margin: 0; }
+}

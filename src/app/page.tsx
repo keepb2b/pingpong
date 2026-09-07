@@ -1,32 +1,14 @@
 import Link from "next/link";
-import { AGENTS, PRICING, SETUP_INCLUDES, yen, GOALS, RISK_CHECKPOINTS } from "@/lib/constants";
-import { AgentIcon, LineIcon, LoopIcon, ShieldCheckIcon } from "@/components/icons/AgentIcons";
+import { PRICING, SETUP_INCLUDES, yen, GOALS, RISK_CHECKPOINTS } from "@/lib/constants";
+import { LineIcon, LoopIcon, ShieldCheckIcon } from "@/components/icons/AgentIcons";
 import { Logo, LogoMark } from "@/components/Logo";
+import { SecretaryChatDemo } from "@/components/SecretaryChatDemo";
+import { ProblemsDiagram } from "@/components/ProblemsDiagram";
+import { AgentsTeam } from "@/components/AgentsTeam";
+import { WorkflowCycle } from "@/components/WorkflowCycle";
+import { FunnelFlow } from "@/components/FunnelFlow";
 
-const PROBLEMS = [
-  "専任の広報担当者を採用できない",
-  "何を発信すればよいか分からない",
-  "日々の業務が忙しく、発信を継続できない",
-  "SNSやブログの内容が思いつかない",
-  "AIを使っても、自社らしい文章にならない",
-  "投稿しても、売上につながっているか分からない",
-  "媒体ごとの管理や分析に時間がかかる",
-  "社内にある広報材料を集められない",
-  "競合や市場の変化を追いきれない",
-  "広報活動の改善方法が分からない",
-];
 
-const CYCLE = [
-  { label: "情報収集", agent: "secretary" },
-  { label: "AI取材", agent: "secretary" },
-  { label: "戦略判断", agent: "strategist" },
-  { label: "コンテンツ制作", agent: "writer" },
-  { label: "リスク確認", agent: "analyst" },
-  { label: "ユーザー承認", agent: "secretary" },
-  { label: "投稿・配信", agent: "marketer" },
-  { label: "売上計測", agent: "analyst" },
-  { label: "学習・改善", agent: "strategist" },
-] as const;
 
 const FEATURES = [
   {
@@ -95,7 +77,7 @@ export default function LandingPage() {
               LINEで一言送るだけ
             </p>
 
-            <h1 className="mt-4 text-[28px] sm:text-[36px] font-bold leading-[1.35] tracking-tight">
+            <h1 className="mt-4 font-serif text-[28px] sm:text-[36px] font-bold leading-[1.35] tracking-tight">
               使うほど会社を理解し、
               <br />
               成果を出す
@@ -147,13 +129,7 @@ export default function LandingPage() {
               <LineIcon size={16} />
               <span className="text-[13px] font-bold">AI秘書とのやり取り</span>
             </div>
-            <div className="p-4 space-y-2.5 bg-[var(--surface-2)]">
-              <Bubble side="ai">本日、広報に使えそうな出来事はありますか？</Bubble>
-              <Bubble side="me">ROOMKEYを新しい施設へ導入することが決まりました</Bubble>
-              <Bubble side="ai">導入先の名称は公開してもよろしいですか？</Bubble>
-              <Bubble side="me">はい、大丈夫です</Bubble>
-              <Bubble side="ai">導入を決めた理由を一言で教えていただけますか？</Bubble>
-            </div>
+            <SecretaryChatDemo />
             <p className="px-4 py-3 text-[11.5px] muted leading-relaxed border-t border-[var(--border)]">
               一度に多くの質問をせず、AI秘書が1問ずつ聞き取ります。文章のほか、写真・動画・
               資料もそのまま送れます。
@@ -164,65 +140,12 @@ export default function LandingPage() {
 
       {/* ------------------------------------------------------- problems -- */}
       <section id="problems" className="mx-auto max-w-6xl px-5 py-14">
-        <h2 className="section-title text-[20px]">AI広報が解決する課題</h2>
-        <p className="muted text-[13px] mb-6 leading-[1.9]">
-          多くの企業や店舗では、広報の重要性を理解していても、次のような問題を抱えています。
-          AI広報は、これらの業務を一つの仕組みに統合します。
-        </p>
-
-        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[4px] overflow-hidden">
-          {PROBLEMS.map((p) => (
-            <li key={p} className="bg-[var(--surface)] p-4 text-[13px] flex items-start gap-2.5">
-              <span className="mt-0.5 shrink-0 h-4 w-4 rounded-full bg-[var(--surface-3)] text-[var(--text-muted)] grid place-items-center text-[11px] font-bold">
-                ?
-              </span>
-              {p}
-            </li>
-          ))}
-        </ul>
+        <ProblemsDiagram />
       </section>
 
       {/* ---------------------------------------------------------- agents - */}
-      <section id="agents" className="bg-[var(--surface)] border-y border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-5 py-14">
-          <h2 className="section-title text-[20px]">6人の専門AIによる広報チーム</h2>
-          <p className="muted text-[13px] mb-6 leading-[1.9]">
-            秘書が情報を集め、ストラテジストが戦略を作り、ライターが伝え、クリエイターが魅せ、
-            マーケターが届け、アナリストが成果を検証します。
-          </p>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {AGENTS.map((a) => (
-              <div key={a.key} className="card overflow-hidden">
-                <div
-                  className="px-4 py-2.5 flex items-center gap-2.5 border-b-2"
-                  style={{ borderBottomColor: a.color }}
-                >
-                  <span style={{ color: a.color }} className="shrink-0">
-                    <AgentIcon agent={a.key} size={26} />
-                  </span>
-                  <h3 className="font-bold text-[14px]">{a.name}</h3>
-                </div>
-                <div className="p-4">
-                  <p className="muted text-[12px] leading-relaxed">{a.role}</p>
-                  <ul className="mt-3 space-y-1">
-                    {a.duties.slice(0, 6).map((d) => (
-                      <li key={d} className="text-[12px] flex items-start gap-1.5">
-                        <span style={{ color: a.color }} className="font-bold shrink-0">
-                          ・
-                        </span>
-                        {d}
-                      </li>
-                    ))}
-                    {a.duties.length > 6 && (
-                      <li className="text-[11.5px] muted pl-3">ほか {a.duties.length - 6}項目</li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section id="agents" aria-labelledby="agents-heading" className="px-4 py-8 sm:px-8">
+        <AgentsTeam />
       </section>
 
       {/* ----------------------------------------------------------- cycle - */}
@@ -240,27 +163,10 @@ export default function LandingPage() {
           自ら判断します。
         </p>
 
-        <ol className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[4px] overflow-hidden">
-          {CYCLE.map((c, i) => {
-            const agent = AGENTS.find((a) => a.key === c.agent)!;
-            return (
-              <li key={c.label} className="bg-[var(--surface)] p-3.5">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="text-[11px] font-bold tabular-nums text-white bg-ink-700 px-1.5 rounded-[2px]">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <p className="text-[13px] font-semibold leading-snug">{c.label}</p>
-                <p className="mt-1 text-[11px]" style={{ color: agent.color }}>
-                  {agent.name}
-                </p>
-              </li>
-            );
-          })}
-        </ol>
+        <WorkflowCycle />
 
         <div className="mt-5 card p-4 border-l-[3px] border-l-[var(--color-accent-500)]">
-          <p className="text-[13px] leading-[1.9]">
+          <p className="font-serif text-[13px] leading-[1.9]">
             AIが毎日活動していても、毎日投稿するとは限りません。発信価値の高い情報がない日は、
             無理に投稿せず、情報収集、過去記事の改善、顧客導線の見直しなどを優先します。
           </p>
@@ -287,34 +193,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="card p-5 viz-root">
-            <p className="text-[13px] font-bold mb-4">
-              集客が目的であれば、閲覧数ではなく顧客導線の全体を分析します
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                "投稿を見る",
-                "記事を読む",
-                "CTAをクリックする",
-                "問い合わせ・予約をする",
-                "購入・成約する",
-              ].map((s, i, arr) => (
-                <span key={s} className="flex items-center gap-2">
-                  <span
-                    className="px-3 py-2 rounded-[3px] text-[12px] font-semibold text-white"
-                    style={{ background: `var(--ord-${i + 1})` }}
-                  >
-                    {s}
-                  </span>
-                  {i < arr.length - 1 && (
-                    <span className="muted text-[13px]" aria-hidden>
-                      →
-                    </span>
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
+          <FunnelFlow />
         </div>
       </section>
 
@@ -330,7 +209,6 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-
         <div className="mt-5 card p-5">
           <h3 className="heading-bar is-accent text-[14px] mb-2 flex items-center gap-2">
             <span className="text-[#1d6f4a]">
@@ -464,7 +342,7 @@ export default function LandingPage() {
             <Link href="/signup" className="btn btn-primary h-12 px-10 text-[15px]">
               <span>AI広報部をはじめる</span>
             </Link>
-            <p className="mt-3 text-[12.5px] muted">
+            <p className="mt-3 font-serif text-[12.5px] muted">
               人を採用することなく、企業が本格的な広報部を持つためのAIエージェントサービスです。
             </p>
           </div>
@@ -475,8 +353,8 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-5 py-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <LogoMark size={26} />
-            <span className="text-[13px] text-white font-bold">AI広報</span>
-            <span className="text-[11.5px]">成果を出すAI広報部</span>
+            <span className="font-serif text-[13px] text-white font-bold">AI広報</span>
+            <span className="font-serif text-[11.5px] font-medium">成果を出すAI広報部</span>
           </div>
           <div className="flex gap-5 text-[12.5px]">
             <Link href="/login" className="hover:text-white">
@@ -489,22 +367,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </main>
-  );
-}
-
-function Bubble({ children, side }: { children: React.ReactNode; side: "ai" | "me" }) {
-  const isAi = side === "ai";
-  return (
-    <div className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
-      <div
-        className={`max-w-[85%] px-3 py-2 text-[12.5px] leading-relaxed rounded-[4px] border ${
-          isAi
-            ? "bg-[var(--surface)] border-[var(--border)]"
-            : "bg-[#e4efe0] border-[#bcd9b3] dark:bg-[#1e3a1c] dark:border-[#2f5c2b]"
-        }`}
-      >
-        {children}
-      </div>
-    </div>
   );
 }
