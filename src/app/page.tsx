@@ -6,6 +6,7 @@ import { SecretaryChatDemo } from "@/components/SecretaryChatDemo";
 import { ProblemsDiagram } from "@/components/ProblemsDiagram";
 import { AgentsTeam } from "@/components/AgentsTeam";
 import { WorkflowCycle } from "@/components/WorkflowCycle";
+import { FunnelFlow } from "@/components/FunnelFlow";
 
 
 
@@ -192,34 +193,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="card p-5 viz-root">
-            <p className="text-[13px] font-bold mb-4">
-              集客が目的であれば、閲覧数ではなく顧客導線の全体を分析します
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                "投稿を見る",
-                "記事を読む",
-                "CTAをクリックする",
-                "問い合わせ・予約をする",
-                "購入・成約する",
-              ].map((s, i, arr) => (
-                <span key={s} className="flex items-center gap-2">
-                  <span
-                    className="px-3 py-2 rounded-[3px] text-[12px] font-semibold text-white"
-                    style={{ background: `var(--ord-${i + 1})` }}
-                  >
-                    {s}
-                  </span>
-                  {i < arr.length - 1 && (
-                    <span className="muted text-[13px]" aria-hidden>
-                      →
-                    </span>
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
+          <FunnelFlow />
         </div>
       </section>
 
