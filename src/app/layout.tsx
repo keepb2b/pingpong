@@ -1,8 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
 import { ToastHost } from "@/components/ui";
 import "./globals.css";
 
+const notoSans = Noto_Sans_JP({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-noto-sans",
+  display: "swap",
+});
+
+const notoSerif = Noto_Serif_JP({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-noto-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
+  icons: {
+    icon: { url: "/images/logo/favicon.png", type: "image/png" },
+    apple: "/images/logo/favicon.png",
+  },
   title: {
     default: "AI広報 — LINEで一言送るだけの、成果を出すAI広報部",
     template: "%s | AI広報",
@@ -26,8 +45,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="ja" className={`${notoSans.variable} ${notoSerif.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased">
         {children}
         <ToastHost />
       </body>

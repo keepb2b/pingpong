@@ -8,10 +8,13 @@
    ・見出しは左の縦罫で示す
    ・情報密度は高め。過度な余白とグラデーションは使わない
    ========================================================================== */
+@theme inline {
+  --font-sans: var(--font-noto-sans), "Noto Sans JP", sans-serif;
+  --font-serif: var(--font-noto-serif), "Noto Serif JP", serif;
+  --font-mincho: var(--font-noto-serif), "Noto Serif JP", serif;
+}
+
 @theme {
-  --font-sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
-    "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, -apple-system, sans-serif;
-  --font-mincho: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", serif;
 
   /* 紺 — コーポレートカラー */
   --color-brand-50: #eef3f9;
@@ -78,6 +81,39 @@
   0%, 80%, 100% { opacity: 0.25; }
   40% { opacity: 1; }
 }
+@keyframes chat-bubble-in-left {
+  from { opacity: 0; transform: translateX(-10px) translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+}
+@keyframes chat-bubble-in-right {
+  from { opacity: 0; transform: translateX(10px) translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+}
+@keyframes chat-typing-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.chat-bubble-in-left {
+  animation: chat-bubble-in-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.chat-bubble-in-right {
+  animation: chat-bubble-in-right 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.chat-typing-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--text-muted, #6b7784);
+  animation: chat-typing-dot 1.05s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble-in-left,
+  .chat-bubble-in-right,
+  .chat-typing-dot {
+    animation: none;
+  }
+}
 
 /* ==========================================================================
    base
@@ -115,10 +151,20 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 14px;
+  font-weight: 400;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "palt" 1;
   text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select,
+.btn,
+.field-input {
+  font-family: inherit;
 }
 
 a { color: inherit; }
