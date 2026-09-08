@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { uploadAvatar, rememberPendingAvatar } from "@/lib/upload";
+import { uploadAvatar } from "@/lib/upload";
 import {
   Button,
   Field,
@@ -58,40 +58,29 @@ export default function SignupPage() {
       return;
     }
 
-    const sb = supabaseBrowser();
-    const { data, error } = await sb.auth.signUp({
+    const registered = await callApi<{ userId: string }>("/api/signup", {
       email: form.email,
       password: form.password,
-      options: { data: { display_name: form.displayName } },
+      displayName: form.displayName,
     });
+    if (!registered) return;
 
-    if (error) {
-      toast(
-        error.message.includes("already registered")
-          ? "このメールアドレスは既に登録されています"
-          : error.message,
-        "err",
-      );
+    const { data, error } = await supabaseBrowser().auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+    if (error || !data.session) {
+      toast(error?.message ?? "ログインに失敗しました", "err");
       return;
     }
 
-    // アバターの保存 — 認証済みなら自分のフォルダ、未確認なら一時領域へ
     let avatarUrl: string | null = null;
     if (avatarFile) {
       try {
-        avatarUrl = await uploadAvatar(avatarFile, data.session ? data.user?.id : null);
+        avatarUrl = await uploadAvatar(avatarFile, data.user?.id);
       } catch (err) {
-        // 画像が失敗しても登録は続行する
         toast(err instanceof Error ? err.message : "画像の保存に失敗しました", "err");
       }
-    }
-
-    // メール確認が必須の設定ではセッションが張られない
-    if (!data.session) {
-      if (avatarUrl) rememberPendingAvatar(avatarUrl);
-      toast("確認メールを送信しました。メール内のリンクから認証してください。");
-      router.push("/login");
-      return;
     }
 
     const created = await callApi("/api/setup", {
