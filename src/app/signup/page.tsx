@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import { uploadAvatar, rememberPendingAvatar } from "@/lib/upload";
 import {
   Button,
   Field,
@@ -58,55 +56,18 @@ export default function SignupPage() {
       return;
     }
 
-    const sb = supabaseBrowser();
-    const { data, error } = await sb.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: { data: { display_name: form.displayName } },
-    });
+    const payload = new FormData();
+    payload.set("email", form.email);
+    payload.set("password", form.password);
+    payload.set("displayName", form.displayName);
+    payload.set("orgName", form.orgName);
+    payload.set("website", form.website);
+    payload.set("subjectName", form.subjectName || form.orgName);
+    payload.set("subjectType", form.subjectType);
+    if (avatarFile) payload.set("avatar", avatarFile);
 
-    if (error) {
-      toast(
-        error.message.includes("already registered")
-          ? "このメールアドレスは既に登録されています"
-          : error.message,
-        "err",
-      );
-      return;
-    }
-
-    // アバターの保存 — 認証済みなら自分のフォルダ、未確認なら一時領域へ
-    let avatarUrl: string | null = null;
-    if (avatarFile) {
-      try {
-        avatarUrl = await uploadAvatar(avatarFile, data.session ? data.user?.id : null);
-      } catch (err) {
-        // 画像が失敗しても登録は続行する
-        toast(err instanceof Error ? err.message : "画像の保存に失敗しました", "err");
-      }
-    }
-
-    // メール確認が必須の設定ではセッションが張られない
-    if (!data.session) {
-      if (avatarUrl) rememberPendingAvatar(avatarUrl);
-      toast("確認メールを送信しました。メール内のリンクから認証してください。");
-      router.push("/login");
-      return;
-    }
-
-    const created = await callApi("/api/setup", {
-      action: "create_org",
-      orgName: form.orgName,
-      displayName: form.displayName,
-      website: form.website,
-      subjectName: form.subjectName || form.orgName,
-      subjectType: form.subjectType,
-    });
-    if (!created) return;
-
-    if (avatarUrl) {
-      await callApi("/api/account", { action: "attach_avatar", avatar_url: avatarUrl });
-    }
+    const registered = await callApi<{ userId: string }>("/api/signup", payload);
+    if (!registered) return;
 
     toast("登録が完了しました");
     router.push("/onboarding");
@@ -290,7 +251,7 @@ export default function SignupPage() {
             </label>
 
             <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-center">
-              <Button type="submit" onClick={signUp} size="lg" className="sm:min-w-[16rem]">
+              <Button type="submit" size="lg" className="sm:min-w-[16rem]">
                 上記の内容で登録する
               </Button>
               <Link

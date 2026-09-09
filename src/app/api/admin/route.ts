@@ -46,7 +46,6 @@ export async function POST(request: Request) {
         return { ok: true };
       }
 
-      // 利用停止 / 再開 (Supabase Auth の ban 機能)
       case "set_user_banned": {
         const userId = String(body.userId ?? "");
         const banned = Boolean(body.banned);
@@ -58,6 +57,15 @@ export async function POST(request: Request) {
         });
         if (error) throw new ApiError(error.message, 500);
         return { ok: true, banned };
+      }
+
+      case "delete_user": {
+        const userId = String(body.userId ?? "");
+        if (!userId) throw new ApiError("userId が必要です");
+        if (userId === admin.userId) throw new ApiError("自分自身は削除できません");
+        const { deleteUserAccount } = await import("@/lib/users");
+        await deleteUserAccount(userId);
+        return { ok: true };
       }
 
       // ユーザーの詳細 (組織・広報対象・直近の活動)

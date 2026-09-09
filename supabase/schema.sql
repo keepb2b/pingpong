@@ -1191,34 +1191,39 @@ create policy avatars_read on storage.objects for select
   using (bucket_id = 'avatars');
 
 -- 自分のフォルダ (<uid>/...) にのみ書き込める
+-- foldername() は環境によって空になるため split_part を使う
 drop policy if exists avatars_write on storage.objects;
 create policy avatars_write on storage.objects for insert to authenticated
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 drop policy if exists avatars_update on storage.objects;
 create policy avatars_update on storage.objects for update to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 drop policy if exists avatars_delete on storage.objects;
 create policy avatars_delete on storage.objects for delete to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 -- 未認証でも登録時にアバターを上げられるようにする (サインアップ画面用)
 -- 認証前は uid が無いため、一時フォルダ pending/ のみ許可する
 drop policy if exists avatars_signup_write on storage.objects;
-create policy avatars_signup_write on storage.objects for insert to anon
+create policy avatars_signup_write on storage.objects for insert to anon, authenticated
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = 'pending'
+    and split_part(name, '/', 1) = 'pending'
   );
 
 -- --------------------------------------------- 運営管理者向けの横断ビュー --
@@ -1288,4 +1293,23 @@ create policy payments_admin_read on payments for select to authenticated
 drop trigger if exists trg_profiles_updated on profiles;
 create trigger trg_profiles_updated before update on profiles
   for each row execute function set_updated_at();
+
+-- 確認メールなしで Auth ユーザーを確定する（SMTP 未設定対策）
+create or replace function public.confirm_user_email(uid uuid)
+returns void
+language plpgsql
+security definer
+set search_path = auth, public
+as $$
+begin
+  update auth.users
+  set
+    email_confirmed_at = coalesce(email_confirmed_at, now()),
+    confirmation_token = '',
+    confirmation_sent_at = null
+  where id = uid;
+end;
+$$;
+revoke all on function public.confirm_user_email(uuid) from public, anon, authenticated;
+grant execute on function public.confirm_user_email(uuid) to service_role;
 

@@ -332,6 +332,29 @@ export function UserTable({ rows }: { rows: AdminUserRow[] }) {
               >
                 {detail.auth?.banned_until ? "利用停止を解除" : "利用を停止する"}
               </Button>
+
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      "このユーザーを削除します。単独オーナーの組織データも削除されます。よろしいですか。",
+                    )
+                  ) {
+                    return;
+                  }
+                  const res = await callApi("/api/admin", {
+                    action: "delete_user",
+                    userId: selected.user_id,
+                  });
+                  if (!res) return;
+                  toast("ユーザーを削除しました");
+                  setSelected(null);
+                  router.refresh();
+                }}
+              >
+                ユーザーを削除
+              </Button>
             </div>
           </div>
         )}

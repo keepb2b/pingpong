@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button, Field, Input, PasswordInput, callApi, toast } from "@/components/ui";
 import { takePendingAvatar } from "@/lib/upload";
 import { Logo } from "@/components/Logo";
@@ -19,18 +18,8 @@ function LoginForm() {
       toast("メールアドレスとパスワードを入力してください", "err");
       return;
     }
-    const { error } = await supabaseBrowser().auth.signInWithPassword({ email, password });
-    if (error) {
-      toast(
-        error.message.includes("Invalid login")
-          ? "メールアドレスまたはパスワードが正しくありません"
-          : error.message.includes("banned") || error.message.includes("disabled")
-            ? "このアカウントは現在ご利用いただけません。運営者にお問い合わせください。"
-            : error.message,
-        "err",
-      );
-      return;
-    }
+    const loggedIn = await callApi("/api/login", { email, password });
+    if (!loggedIn) return;
 
     // 登録時にメール確認待ちだった場合、控えておいたアバターをここで紐づける
     const pending = takePendingAvatar();
@@ -70,7 +59,7 @@ function LoginForm() {
         />
       </Field>
 
-      <Button type="submit" onClick={signIn} className="w-full" size="lg">
+      <Button type="submit" className="w-full" size="lg">
         ログイン
       </Button>
     </form>

@@ -2,6 +2,7 @@ import { handle, requireOrg, requireRole, requireSubject, ApiError } from "@/lib
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { KARTE_SECTIONS, PRICING } from "@/lib/constants";
+import { provisionOwnerOrg, scaffoldSubject } from "@/lib/provision";
 
 export const runtime = "nodejs";
 
@@ -372,92 +373,14 @@ async function createOrg(body: Record<string, unknown>) {
   } = await sbUser.auth.getUser();
   if (!user) throw new ApiError("認証が必要です", 401);
 
-  const sb = supabaseAdmin();
-
-  const { data: existing } = await sb
-    .from("memberships")
-    .select("org_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (existing) return { orgId: existing.org_id, existed: true };
-
-  const { data: org, error } = await sb
-    .from("organizations")
-    .insert({
-      name: String(body.orgName ?? "新しい会社"),
-      industry: (body.industry as string) ?? null,
-      website: (body.website as string) ?? null,
-    })
-    .select("id")
-    .single();
-
-  if (error || !org) throw new ApiError(error?.message ?? "組織の作成に失敗しました", 500);
-
-  await sb.from("memberships").insert({ org_id: org.id, user_id: user.id, role: "owner" });
-  await sb.from("profiles").upsert(
-    { id: user.id, email: user.email, display_name: (body.displayName as string) ?? user.email },
-    { onConflict: "id" },
-  );
-  await sb.from("subscriptions").insert({ org_id: org.id, status: "none" });
-
-  const { data: subject } = await sb
-    .from("subjects")
-    .insert({
-      org_id: org.id,
-      name: String(body.subjectName ?? body.orgName ?? "自社"),
-      type: String(body.subjectType ?? "company"),
-      website: (body.website as string) ?? null,
-      is_primary: true,
-    })
-    .select("id")
-    .single();
-
-  if (subject) await scaffoldSubject(org.id, subject.id);
-
-  return { orgId: org.id, subjectId: subject?.id };
-}
-
-/** 広報対象を作った直後の初期レコード一式。 */
-async function scaffoldSubject(orgId: string, subjectId: string) {
-  const sb = supabaseAdmin();
-
-  await sb.from("karte_sections").upsert(
-    KARTE_SECTIONS.map((s) => ({
-      org_id: orgId,
-      subject_id: subjectId,
-      key: s.key,
-      label: s.label,
-      content: null,
-      confidence: 0,
-      source: "user",
-    })),
-    { onConflict: "subject_id,key" },
-  );
-
-  await sb.from("brand_voice").upsert(
-    { org_id: orgId, subject_id: subjectId, emoji_policy: "minimal" },
-    { onConflict: "subject_id" },
-  );
-
-  await sb.from("dialogue_settings").upsert(
-    { org_id: orgId, subject_id: subjectId, frequency: "daily", send_hour: 9 },
-    { onConflict: "subject_id" },
-  );
-
-  for (const type of ["x", "instagram", "facebook", "gbp", "wordpress"]) {
-    await sb
-      .from("channels")
-      .upsert(
-        { org_id: orgId, subject_id: subjectId, type, frequency_mode: "ai_auto" },
-        { onConflict: "subject_id,type" },
-      );
-  }
-
-  await sb.from("approval_rules").insert({
-    org_id: orgId,
-    subject_id: subjectId,
-    min_risk: "none",
-    required_roles: ["approver"],
-    auto_approve: false,
+  return provisionOwnerOrg({
+    userId: user.id,
+    email: user.email ?? null,
+    displayName: String(body.displayName ?? user.email ?? ""),
+    orgName: String(body.orgName ?? "新しい会社"),
+    website: (body.website as string) || null,
+    subjectName: (body.subjectName as string) || null,
+    subjectType: (body.subjectType as string) || "company",
+    industry: (body.industry as string) || null,
   });
 }

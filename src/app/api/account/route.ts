@@ -1,6 +1,7 @@
 import { handle, ApiError } from "@/lib/api";
 import { supabaseServer, getSessionUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { asUploadBlob, saveAvatarForUser } from "@/lib/provision";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,22 @@ export async function POST(request: Request) {
   return handle(async () => {
     const user = await getSessionUser();
     if (!user) throw new ApiError("認証が必要です", 401);
+
+    const contentType = request.headers.get("content-type") ?? "";
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      if (String(form.get("action") ?? "") !== "upload_avatar") {
+        throw new ApiError("不明なアクションです");
+      }
+      const file = asUploadBlob(form.get("avatar"));
+      if (!file) {
+        throw new ApiError("画像ファイルが必要です");
+      }
+      const avatarUrl = await saveAvatarForUser(user.id, file);
+      const sb = supabaseAdmin();
+      await sb.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+      return { avatarUrl };
+    }
 
     const body = (await request.json()) as Record<string, unknown>;
     const action = String(body.action ?? "");

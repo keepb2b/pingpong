@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, Breadcrumb } from "@/components/ui";
 import { PageHeader, formatDateTime } from "@/components/dashboard/shared";
-import { AccountForm, PasswordForm } from "./Forms";
+import { AccountForm, PasswordForm, DeleteAccountForm } from "./Forms";
 import { ROLE_LABEL, SUBJECT_TYPE_LABEL } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +64,14 @@ export default async function AccountPage() {
               subtitle="安全のため、現在のパスワードを確認したうえで変更します。"
             />
             <PasswordForm />
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="アカウントの削除"
+              subtitle="この操作は取り消せません。"
+            />
+            <DeleteAccountForm />
           </Card>
         </div>
 

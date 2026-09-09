@@ -415,9 +415,12 @@ export function AvatarPicker({
       onSelect(null, null);
       return;
     }
-    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) {
-      setError("PNG / JPEG / WebP / GIF の画像を選んでください。");
-      return;
+    if (!/^image\/(png|jpe?g|jpg|webp|gif)$/i.test(file.type) && file.type !== "") {
+      const extOk = /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+      if (!extOk) {
+        setError("PNG / JPEG / WebP / GIF の画像を選んでください。");
+        return;
+      }
     }
     if (file.size > 5 * 1024 * 1024) {
       setError("ファイルサイズは5MBまでです。");
@@ -634,13 +637,14 @@ export function ToastHost() {
 /* ============================================================== helpers === */
 export async function callApi<T = unknown>(
   path: string,
-  body: Record<string, unknown>,
+  body: Record<string, unknown> | FormData,
 ): Promise<T | null> {
   try {
+    const isForm = typeof FormData !== "undefined" && body instanceof FormData;
     const res = await fetch(path, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: isForm ? undefined : { "Content-Type": "application/json" },
+      body: isForm ? body : JSON.stringify(body),
     });
     const json = await res.json();
     if (!res.ok || !json.ok) {

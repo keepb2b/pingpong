@@ -24,7 +24,7 @@ export async function uploadAvatar(file: File, userId?: string | null): Promise<
 
   const { error } = await sb.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,
-    upsert: true,
+    upsert: false,
     cacheControl: "3600",
   });
 
