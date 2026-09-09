@@ -210,3 +210,42 @@ export function PasswordForm() {
     </div>
   );
 }
+
+export function DeleteAccountForm() {
+  const router = useRouter();
+  const [confirm, setConfirm] = useState("");
+
+  async function remove() {
+    if (confirm !== "削除") {
+      toast("確認のため「削除」と入力してください", "err");
+      return;
+    }
+    if (
+      !window.confirm(
+        "アカウントと、あなたが単独オーナーの組織データが削除されます。よろしいですか。",
+      )
+    ) {
+      return;
+    }
+    const res = await callApi("/api/account", { action: "delete_account", confirm: "削除" });
+    if (!res) return;
+    toast("アカウントを削除しました");
+    router.push("/login");
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="muted text-[12.5px] leading-relaxed">
+        削除するとログインできなくなります。あなたが唯一のオーナーである組織のデータも削除されます。
+        他のメンバーがいる組織からは、メンバーとして除外されます。
+      </p>
+      <Field label="確認" hint="削除する場合は「削除」と入力してください。">
+        <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="削除" />
+      </Field>
+      <Button variant="danger" onClick={remove}>
+        アカウントを削除する
+      </Button>
+    </div>
+  );
+}
