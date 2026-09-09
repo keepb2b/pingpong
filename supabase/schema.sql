@@ -1191,34 +1191,39 @@ create policy avatars_read on storage.objects for select
   using (bucket_id = 'avatars');
 
 -- 自分のフォルダ (<uid>/...) にのみ書き込める
+-- foldername() は環境によって空になるため split_part を使う
 drop policy if exists avatars_write on storage.objects;
 create policy avatars_write on storage.objects for insert to authenticated
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 drop policy if exists avatars_update on storage.objects;
 create policy avatars_update on storage.objects for update to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 drop policy if exists avatars_delete on storage.objects;
 create policy avatars_delete on storage.objects for delete to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and split_part(name, '/', 1) = auth.uid()::text
   );
 
 -- 未認証でも登録時にアバターを上げられるようにする (サインアップ画面用)
 -- 認証前は uid が無いため、一時フォルダ pending/ のみ許可する
 drop policy if exists avatars_signup_write on storage.objects;
-create policy avatars_signup_write on storage.objects for insert to anon
+create policy avatars_signup_write on storage.objects for insert to anon, authenticated
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = 'pending'
+    and split_part(name, '/', 1) = 'pending'
   );
 
 -- --------------------------------------------- 運営管理者向けの横断ビュー --

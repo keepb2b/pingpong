@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import { uploadAvatar } from "@/lib/upload";
 import {
   Button,
   Field,
@@ -58,44 +56,18 @@ export default function SignupPage() {
       return;
     }
 
-    const registered = await callApi<{ userId: string }>("/api/signup", {
-      email: form.email,
-      password: form.password,
-      displayName: form.displayName,
-    });
+    const payload = new FormData();
+    payload.set("email", form.email);
+    payload.set("password", form.password);
+    payload.set("displayName", form.displayName);
+    payload.set("orgName", form.orgName);
+    payload.set("website", form.website);
+    payload.set("subjectName", form.subjectName || form.orgName);
+    payload.set("subjectType", form.subjectType);
+    if (avatarFile) payload.set("avatar", avatarFile);
+
+    const registered = await callApi<{ userId: string }>("/api/signup", payload);
     if (!registered) return;
-
-    const { data, error } = await supabaseBrowser().auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-    if (error || !data.session) {
-      toast(error?.message ?? "ログインに失敗しました", "err");
-      return;
-    }
-
-    let avatarUrl: string | null = null;
-    if (avatarFile) {
-      try {
-        avatarUrl = await uploadAvatar(avatarFile, data.user?.id);
-      } catch (err) {
-        toast(err instanceof Error ? err.message : "画像の保存に失敗しました", "err");
-      }
-    }
-
-    const created = await callApi("/api/setup", {
-      action: "create_org",
-      orgName: form.orgName,
-      displayName: form.displayName,
-      website: form.website,
-      subjectName: form.subjectName || form.orgName,
-      subjectType: form.subjectType,
-    });
-    if (!created) return;
-
-    if (avatarUrl) {
-      await callApi("/api/account", { action: "attach_avatar", avatar_url: avatarUrl });
-    }
 
     toast("登録が完了しました");
     router.push("/onboarding");
@@ -279,7 +251,7 @@ export default function SignupPage() {
             </label>
 
             <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-center">
-              <Button type="submit" onClick={signUp} size="lg" className="sm:min-w-[16rem]">
+              <Button type="submit" size="lg" className="sm:min-w-[16rem]">
                 上記の内容で登録する
               </Button>
               <Link

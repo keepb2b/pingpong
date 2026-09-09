@@ -690,28 +690,46 @@ export function MembersPanel({
               <span className="block font-medium truncate">{m.name}</span>
               <span className="muted block truncate">{m.email}</span>
             </span>
-            <div className="ml-auto shrink-0">
+            <div className="ml-auto shrink-0 flex items-center gap-1.5">
               {canManage && m.userId !== currentUserId ? (
-                <Select
-                  value={m.role}
-                  className="h-8 text-xs py-0"
-                  onChange={async (e) => {
-                    const res = await callApi("/api/setup", {
-                      action: "update_member_role",
-                      membershipId: m.id,
-                      role: e.target.value,
-                    });
-                    if (!res) return;
-                    toast("権限を変更しました");
-                    router.refresh();
-                  }}
-                >
-                  {Object.entries(ROLE_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </Select>
+                <>
+                  <Select
+                    value={m.role}
+                    className="h-8 text-xs py-0"
+                    onChange={async (e) => {
+                      const res = await callApi("/api/setup", {
+                        action: "update_member_role",
+                        membershipId: m.id,
+                        role: e.target.value,
+                      });
+                      if (!res) return;
+                      toast("権限を変更しました");
+                      router.refresh();
+                    }}
+                  >
+                    {Object.entries(ROLE_LABEL).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </Select>
+                  <button
+                    type="button"
+                    className="text-[11px] text-[#c8102e] px-1.5 py-1 hover:underline"
+                    onClick={async () => {
+                      if (!window.confirm(`${m.name} を組織から除外しますか。`)) return;
+                      const res = await callApi("/api/setup", {
+                        action: "remove_member",
+                        membershipId: m.id,
+                      });
+                      if (!res) return;
+                      toast("メンバーを除外しました");
+                      router.refresh();
+                    }}
+                  >
+                    除外
+                  </button>
+                </>
               ) : (
                 <Badge tone="brand">{ROLE_LABEL[m.role] ?? m.role}</Badge>
               )}

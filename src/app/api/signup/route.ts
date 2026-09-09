@@ -1,60 +1,104 @@
 import { handle, ApiError } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseServer } from "@/lib/supabase/server";
+import { parseSignupRequest } from "@/lib/signup-input";
+import { provisionOwnerOrg, saveAvatarForUser } from "@/lib/provision";
 
 export const runtime = "nodejs";
 
-/** メール確認なしで Auth ユーザーを作成する（サービスロールで確定済みにする）。 */
+/**
+ * 会員登録をサーバー側で完結させる。
+ * Auth ユーザーは最初から確定済みにし、確認メールは送らない。
+ */
 export async function POST(request: Request) {
   return handle(async () => {
-    const body = (await request.json()) as Record<string, unknown>;
-    const email = String(body.email ?? "")
-      .trim()
-      .toLowerCase();
-    const password = String(body.password ?? "");
-    const displayName = String(body.displayName ?? "").trim();
-
-    if (!email || !password || !displayName) {
-      throw new ApiError("必須項目を入力してください");
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new ApiError("メールアドレスの形式が正しくありません");
-    }
-    if (password.length < 8) {
-      throw new ApiError("パスワードは8文字以上にしてください");
+    const fields = await parseSignupRequest(request);
+    if (!fields.orgName) {
+      throw new ApiError("会社名・組織名を入力してください");
     }
 
-    const sb = supabaseAdmin();
-    const { data, error } = await sb.auth.admin.createUser({
-      email,
+    const user = await createOrRecoverUser(fields.email, fields.password, fields.displayName);
+    await confirmEmailWithoutMail(user.id);
+
+    let avatarUrl: string | null = null;
+    if (fields.avatar) {
+      avatarUrl = await saveAvatarForUser(user.id, fields.avatar);
+    }
+
+    const provisioned = await provisionOwnerOrg({
+      userId: user.id,
+      email: user.email ?? fields.email,
+      displayName: fields.displayName,
+      orgName: fields.orgName,
+      website: fields.website,
+      subjectName: fields.subjectName,
+      subjectType: fields.subjectType,
+      avatarUrl,
+    });
+
+    await establishSession(fields.email, fields.password);
+
+    return {
+      userId: user.id,
+      orgId: provisioned.orgId,
+      avatarUrl,
+    };
+  });
+}
+
+/** 確認メールを出さず、メールアドレスを確定済みにする。 */
+async function confirmEmailWithoutMail(userId: string) {
+  const sb = supabaseAdmin();
+  const { error } = await sb.auth.admin.updateUserById(userId, { email_confirm: true });
+  if (error) throw new ApiError(error.message, 500);
+}
+
+async function establishSession(email: string, password: string) {
+  const sb = await supabaseServer();
+  let { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error && /confirm|not confirmed/i.test(error.message)) {
+    const listed = await findAuthUserByEmail(email);
+    if (listed) await confirmEmailWithoutMail(listed.id);
+    ({ error } = await sb.auth.signInWithPassword({ email, password }));
+  }
+  if (error) throw new ApiError(error.message, 500);
+}
+
+async function createOrRecoverUser(email: string, password: string, displayName: string) {
+  const sb = supabaseAdmin();
+  const { data, error } = await sb.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { display_name: displayName },
+  });
+
+  if (data?.user) return data.user;
+
+  if (error && /already|exists|registered/i.test(error.message)) {
+    const existing = await findAuthUserByEmail(email);
+    if (!existing) throw new ApiError("このメールアドレスは既に登録されています");
+
+    const { data: membership } = await sb
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", existing.id)
+      .maybeSingle();
+
+    if (existing.email_confirmed_at && membership) {
+      throw new ApiError("このメールアドレスは既に登録されています");
+    }
+
+    const { error: updateError } = await sb.auth.admin.updateUserById(existing.id, {
       password,
       email_confirm: true,
       user_metadata: { display_name: displayName },
     });
+    if (updateError) throw new ApiError(updateError.message, 500);
+    return existing;
+  }
 
-    if (data?.user) {
-      return { userId: data.user.id };
-    }
-
-    if (error && /already|exists|registered/i.test(error.message)) {
-      const existing = await findAuthUserByEmail(email);
-      if (!existing) throw new ApiError("このメールアドレスは既に登録されています");
-
-      if (existing.email_confirmed_at) {
-        throw new ApiError("このメールアドレスは既に登録されています");
-      }
-
-      // 以前の「確認待ち」ユーザーを確定し、今回のパスワードで入れるようにする
-      const { error: updateError } = await sb.auth.admin.updateUserById(existing.id, {
-        password,
-        email_confirm: true,
-        user_metadata: { display_name: displayName },
-      });
-      if (updateError) throw new ApiError(updateError.message, 500);
-      return { userId: existing.id };
-    }
-
-    throw new ApiError(error?.message ?? "アカウントの作成に失敗しました", 500);
-  });
+  throw new ApiError(error?.message ?? "アカウントの作成に失敗しました", 500);
 }
 
 async function findAuthUserByEmail(email: string) {

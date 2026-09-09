@@ -12,7 +12,6 @@ import {
   callApi,
   toast,
 } from "@/components/ui";
-import { uploadAvatar } from "@/lib/upload";
 
 type Profile = {
   display_name: string;
@@ -25,7 +24,7 @@ type Profile = {
   bio: string;
 };
 
-export function AccountForm({ userId, initial }: { userId: string; initial: Profile }) {
+export function AccountForm({ initial }: { userId?: string; initial: Profile }) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -41,14 +40,13 @@ export function AccountForm({ userId, initial }: { userId: string; initial: Prof
 
     let avatarUrl = form.avatar_url;
 
-    // 新しい画像が選ばれていれば先に保存する
     if (avatarFile) {
-      try {
-        avatarUrl = await uploadAvatar(avatarFile, userId);
-      } catch (err) {
-        toast(err instanceof Error ? err.message : "画像の保存に失敗しました", "err");
-        return;
-      }
+      const fd = new FormData();
+      fd.set("action", "upload_avatar");
+      fd.set("avatar", avatarFile);
+      const uploaded = await callApi<{ avatarUrl: string }>("/api/account", fd);
+      if (!uploaded) return;
+      avatarUrl = uploaded.avatarUrl;
     } else if (preview === null) {
       avatarUrl = null; // 削除された
     }
