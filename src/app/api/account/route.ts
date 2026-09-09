@@ -103,6 +103,22 @@ export async function POST(request: Request) {
         return { ok: true };
       }
 
+      case "delete_account": {
+        const confirm = String(body.confirm ?? "");
+        if (confirm !== "削除") {
+          throw new ApiError("確認のため「削除」と入力してください");
+        }
+        const { deleteUserAccount } = await import("@/lib/users");
+        await deleteUserAccount(user.id);
+        try {
+          const authClient = await supabaseServer();
+          await authClient.auth.signOut();
+        } catch {
+          // ユーザー削除後はセッションが既に無効なことがある
+        }
+        return { ok: true };
+      }
+
       default:
         throw new ApiError(`不明なアクション: ${action}`);
     }
