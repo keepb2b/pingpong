@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 import { parseSignupRequest } from "@/lib/signup-input";
 import { provisionOwnerOrg, saveAvatarForUser } from "@/lib/provision";
+import { confirmEmailWithoutMail, findAuthUserByEmail, mapAuthError } from "@/lib/users";
 
 export const runtime = "nodejs";
 
@@ -18,11 +19,19 @@ export async function POST(request: Request) {
     }
 
     const user = await createOrRecoverUser(fields.email, fields.password, fields.displayName);
-    await confirmEmailWithoutMail(user.id);
+    try {
+      await confirmEmailWithoutMail(user.id);
+    } catch (err) {
+      console.error("[signup] confirm", err);
+    }
 
     let avatarUrl: string | null = null;
     if (fields.avatar) {
       avatarUrl = await saveAvatarForUser(user.id, fields.avatar);
+      await supabaseAdmin()
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
     }
 
     const provisioned = await provisionOwnerOrg({
@@ -46,22 +55,26 @@ export async function POST(request: Request) {
   });
 }
 
-/** 確認メールを出さず、メールアドレスを確定済みにする。 */
-async function confirmEmailWithoutMail(userId: string) {
-  const sb = supabaseAdmin();
-  const { error } = await sb.auth.admin.updateUserById(userId, { email_confirm: true });
-  if (error) throw new ApiError(error.message, 500);
-}
-
 async function establishSession(email: string, password: string) {
+  const listed = await findAuthUserByEmail(email);
+  if (listed) {
+    try {
+      await confirmEmailWithoutMail(listed.id);
+    } catch (err) {
+      console.error("[signup] confirm", err);
+    }
+  }
+
   const sb = await supabaseServer();
   let { error } = await sb.auth.signInWithPassword({ email, password });
-  if (error && /confirm|not confirmed/i.test(error.message)) {
-    const listed = await findAuthUserByEmail(email);
+  if (error && /confirm|not confirmed|email is not configured/i.test(error.message)) {
     if (listed) await confirmEmailWithoutMail(listed.id);
     ({ error } = await sb.auth.signInWithPassword({ email, password }));
   }
-  if (error) throw new ApiError(error.message, 500);
+  if (error) {
+    console.error("[signup] session", error.message);
+    return;
+  }
 }
 
 async function createOrRecoverUser(email: string, password: string, displayName: string) {
@@ -91,23 +104,11 @@ async function createOrRecoverUser(email: string, password: string, displayName:
 
     const { error: updateError } = await sb.auth.admin.updateUserById(existing.id, {
       password,
-      email_confirm: true,
       user_metadata: { display_name: displayName },
     });
-    if (updateError) throw new ApiError(updateError.message, 500);
+    if (updateError) throw new ApiError(mapAuthError(updateError.message), 500);
     return existing;
   }
 
-  throw new ApiError(error?.message ?? "アカウントの作成に失敗しました", 500);
-}
-
-async function findAuthUserByEmail(email: string) {
-  const sb = supabaseAdmin();
-  for (let page = 1; page <= 10; page++) {
-    const { data } = await sb.auth.admin.listUsers({ page, perPage: 200 });
-    const found = data?.users?.find((u) => u.email?.toLowerCase() === email);
-    if (found) return found;
-    if (!data?.users?.length) break;
-  }
-  return null;
+  throw new ApiError(mapAuthError(error?.message ?? "", "アカウントの作成に失敗しました"), 500);
 }

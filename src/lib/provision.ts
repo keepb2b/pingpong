@@ -4,7 +4,6 @@ import { KARTE_SECTIONS } from "@/lib/constants";
 
 const AVATAR_BUCKET = "avatars";
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]);
 
 export type ProvisionInput = {
   userId: string;
@@ -124,40 +123,61 @@ export async function scaffoldSubject(orgId: string, subjectId: string) {
   });
 }
 
-function extensionOf(file: File): string {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
+export type UploadBlob = {
+  name?: string;
+  type?: string;
+  size: number;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+};
+
+export function asUploadBlob(value: unknown): UploadBlob | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as UploadBlob;
+  if (typeof v.arrayBuffer !== "function" || typeof v.size !== "number" || !(v.size > 0)) {
+    return null;
+  }
+  return v;
+}
+
+function extensionOf(file: UploadBlob): string {
+  const fromName = file.name?.split(".").pop()?.toLowerCase();
   if (fromName && /^(png|jpe?g|webp|gif)$/.test(fromName)) return fromName === "jpeg" ? "jpg" : fromName;
-  if (file.type.includes("png")) return "png";
-  if (file.type.includes("webp")) return "webp";
-  if (file.type.includes("gif")) return "gif";
+  const type = (file.type || "").toLowerCase();
+  if (type.includes("png")) return "png";
+  if (type.includes("webp")) return "webp";
+  if (type.includes("gif")) return "gif";
   return "jpg";
 }
 
 /** service role でアバターを保存する。Storage RLS を通らない。 */
-export async function saveAvatarForUser(userId: string, file: File): Promise<string> {
+export async function saveAvatarForUser(userId: string, file: UploadBlob): Promise<string> {
   if (file.size > AVATAR_MAX_BYTES) {
     throw new ApiError("画像は5MB以下にしてください");
   }
   const type = (file.type || "").toLowerCase();
-  if (type && !AVATAR_TYPES.has(type) && !type.startsWith("image/")) {
+  const looksLikeImage =
+    !type || type.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name ?? "");
+  if (!looksLikeImage) {
     throw new ApiError("対応していない画像形式です（PNG / JPEG / WebP / GIF）");
   }
 
   const sb = supabaseAdmin();
   await ensureAvatarsBucket();
 
+  const contentType =
+    type && type.startsWith("image/") && type !== "image/jpg" ? type : `image/${extensionOf(file) === "jpg" ? "jpeg" : extensionOf(file)}`;
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensionOf(file)}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error } = await sb.storage.from(AVATAR_BUCKET).upload(path, buffer, {
-    contentType: file.type || "image/jpeg",
+    contentType,
     upsert: true,
     cacheControl: "3600",
   });
   if (error) {
     throw new ApiError(
-      error.message.includes("Bucket not found")
-        ? "アバター用のストレージ(avatars)が未作成です。supabase/schema.sql を適用してください。"
+      error.message.includes("Bucket not found") || /row-level security/i.test(error.message)
+        ? "画像ストレージの準備に失敗しました。avatars バケットと RLS ポリシーを適用してください。"
         : `画像のアップロードに失敗しました: ${error.message}`,
       500,
     );
@@ -181,9 +201,8 @@ export async function ensureAvatarsBucket() {
   const created = await sb.storage.createBucket(AVATAR_BUCKET, {
     public: true,
     fileSizeLimit: AVATAR_MAX_BYTES,
-    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
   });
-  if (created.error && !/already exists/i.test(created.error.message)) {
+  if (created.error && !/already exists|duplicate/i.test(created.error.message)) {
     throw new ApiError(`ストレージの準備に失敗しました: ${created.error.message}`, 500);
   }
 }

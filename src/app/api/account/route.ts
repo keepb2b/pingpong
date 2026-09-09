@@ -1,7 +1,7 @@
 import { handle, ApiError } from "@/lib/api";
 import { supabaseServer, getSessionUser } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { saveAvatarForUser } from "@/lib/provision";
+import { asUploadBlob, saveAvatarForUser } from "@/lib/provision";
 
 export const runtime = "nodejs";
 
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
       if (String(form.get("action") ?? "") !== "upload_avatar") {
         throw new ApiError("不明なアクションです");
       }
-      const file = form.get("avatar");
-      if (!(file instanceof File) || file.size === 0) {
+      const file = asUploadBlob(form.get("avatar"));
+      if (!file) {
         throw new ApiError("画像ファイルが必要です");
       }
       const avatarUrl = await saveAvatarForUser(user.id, file);

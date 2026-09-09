@@ -1294,3 +1294,22 @@ drop trigger if exists trg_profiles_updated on profiles;
 create trigger trg_profiles_updated before update on profiles
   for each row execute function set_updated_at();
 
+-- 確認メールなしで Auth ユーザーを確定する（SMTP 未設定対策）
+create or replace function public.confirm_user_email(uid uuid)
+returns void
+language plpgsql
+security definer
+set search_path = auth, public
+as $$
+begin
+  update auth.users
+  set
+    email_confirmed_at = coalesce(email_confirmed_at, now()),
+    confirmation_token = '',
+    confirmation_sent_at = null
+  where id = uid;
+end;
+$$;
+revoke all on function public.confirm_user_email(uuid) from public, anon, authenticated;
+grant execute on function public.confirm_user_email(uuid) to service_role;
+

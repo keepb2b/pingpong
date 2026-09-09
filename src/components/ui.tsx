@@ -415,9 +415,12 @@ export function AvatarPicker({
       onSelect(null, null);
       return;
     }
-    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) {
-      setError("PNG / JPEG / WebP / GIF の画像を選んでください。");
-      return;
+    if (!/^image\/(png|jpe?g|jpg|webp|gif)$/i.test(file.type) && file.type !== "") {
+      const extOk = /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+      if (!extOk) {
+        setError("PNG / JPEG / WebP / GIF の画像を選んでください。");
+        return;
+      }
     }
     if (file.size > 5 * 1024 * 1024) {
       setError("ファイルサイズは5MBまでです。");

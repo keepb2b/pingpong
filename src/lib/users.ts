@@ -17,6 +17,9 @@ export function mapAuthError(message: string, fallback = "アカウント処理�
   if (/banned|disabled/i.test(message)) {
     return "このアカウントは現在ご利用いただけません";
   }
+  if (/email is not configured/i.test(message)) {
+    return "メール送信設定が未完了のためログインできませんでした。もう一度お試しください。";
+  }
   return message || fallback;
 }
 
@@ -39,10 +42,28 @@ export async function confirmEmailWithoutMail(userId: string) {
   const { data, error } = await sb.auth.admin.getUserById(userId);
   if (error) throw new ApiError(mapAuthError(error.message), 500);
   if (data.user?.email_confirmed_at) return;
+
+  // SMTP 未設定でも確定できるように SQL で直接マークする
+  const { error: rpcError } = await sb.rpc("confirm_user_email", { uid: userId });
+  if (!rpcError) {
+    const again = await sb.auth.admin.getUserById(userId);
+    if (again.data.user?.email_confirmed_at) return;
+  }
+
   const { error: updateError } = await sb.auth.admin.updateUserById(userId, {
     email_confirm: true,
   });
-  if (updateError) throw new ApiError(mapAuthError(updateError.message), 500);
+  if (updateError && !/email is not configured/i.test(updateError.message)) {
+    throw new ApiError(mapAuthError(updateError.message), 500);
+  }
+
+  const verified = await sb.auth.admin.getUserById(userId);
+  if (!verified.data.user?.email_confirmed_at) {
+    throw new ApiError(
+      "メール確認を確定できませんでした。supabase/migrations/0006_confirm_user_email.sql を適用してください。",
+      500,
+    );
+  }
 }
 
 export async function acceptInvitation(opts: {

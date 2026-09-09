@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api";
+import { asUploadBlob, type UploadBlob } from "@/lib/provision";
 
 export type SignupFields = {
   email: string;
@@ -8,7 +9,7 @@ export type SignupFields = {
   website: string | null;
   subjectName: string;
   subjectType: string;
-  avatar: File | null;
+  avatar: UploadBlob | null;
 };
 
 export async function parseSignupRequest(request: Request): Promise<SignupFields> {
@@ -25,7 +26,7 @@ export async function parseSignupRequest(request: Request): Promise<SignupFields
       website: String(form.get("website") ?? ""),
       subjectName: String(form.get("subjectName") ?? ""),
       subjectType: String(form.get("subjectType") ?? "company"),
-      avatar: avatar instanceof File && avatar.size > 0 ? avatar : null,
+      avatar: asUploadBlob(avatar),
     });
   }
 
