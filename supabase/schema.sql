@@ -1313,3 +1313,8 @@ $$;
 revoke all on function public.confirm_user_email(uuid) from public, anon, authenticated;
 grant execute on function public.confirm_user_email(uuid) to service_role;
 
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to postgres, anon, authenticated, service_role;
+grant all on all sequences in schema public to postgres, anon, authenticated, service_role;
+grant all on table public.organizations to postgres, anon, authenticated, service_role;
+

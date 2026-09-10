@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
-import { Card, Badge, EmptyState, statusTone, riskTone } from "@/components/ui";
+import { Card, Badge, EmptyState } from "@/components/ui";
+import { statusTone, riskTone } from "@/lib/badge-tone";
 import { PageHeader, formatDateTime } from "@/components/dashboard/shared";
 import { ContentToolbar } from "./Toolbar";
 import { CONTENT_TYPE_LABEL, STATUS_LABEL, RISK_LABEL, GOAL_LABEL } from "@/lib/constants";

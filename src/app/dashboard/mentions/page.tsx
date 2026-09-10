@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
-import { Card, CardHeader, Badge, EmptyState, riskTone } from "@/components/ui";
+import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
+import { riskTone } from "@/lib/badge-tone";
 import { PageHeader, formatDateTime } from "@/components/dashboard/shared";
 import { MentionRow, AddMention } from "./Actions";
 import { RISK_LABEL } from "@/lib/constants";
