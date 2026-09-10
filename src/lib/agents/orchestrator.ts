@@ -15,11 +15,15 @@ import {
   textMessage,
 } from "@/lib/line";
 import {
+  CHANNELS,
   CHANNEL_LABEL,
+  CONTENT_TYPES,
+  GOALS,
   GOAL_LABEL,
   SCORE_DIMENSIONS,
   type ChannelKey,
   type ContentTypeKey,
+  type GoalKey,
 } from "@/lib/constants";
 
 const RISK_ORDER = ["none", "low", "medium", "high", "critical"];
@@ -165,11 +169,11 @@ export async function runDailyCycle(subjectId: string): Promise<{
         org_id: subject.org_id,
         subject_id: subjectId,
         intake_item_id: intakeId,
-        theme: p.theme,
-        reason: p.reason,
-        goal: p.goal,
+        theme: String(p.theme ?? "本日の発信").slice(0, 500) || "本日の発信",
+        reason: String(p.reason ?? "戦略判断").slice(0, 2000) || "戦略判断",
+        goal: coerceGoal(p.goal),
         audience: p.audience,
-        channels: p.channels,
+        channels: coerceChannels(p.channels),
         cta: p.cta,
         scheduled_for: p.scheduled_for ?? null,
         expected_effect: p.expected_effect,
@@ -187,7 +191,7 @@ export async function runDailyCycle(subjectId: string): Promise<{
     try {
       await produceFromProposal({
         proposalId: proposal.id,
-        contentType: (p.content_type as ContentTypeKey) ?? "sns_post",
+        contentType: coerceContentType(p.content_type),
       });
     } catch (err) {
       await notify({
@@ -223,6 +227,51 @@ function isUuid(v: unknown): v is string {
   return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 }
 
+const CONTENT_TYPE_KEYS = new Set(CONTENT_TYPES.map((t) => t.key));
+const GOAL_KEYS = new Set(GOALS.map((g) => g.key));
+const CHANNEL_KEYS = new Set(CHANNELS.map((c) => c.key));
+
+export function coerceContentType(value: unknown): ContentTypeKey {
+  const raw = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (CONTENT_TYPE_KEYS.has(raw as ContentTypeKey)) return raw as ContentTypeKey;
+  if (/instagram|twitter|x\b|sns|social/.test(raw)) return "sns_post";
+  if (/case|事例/.test(raw)) return "case_study";
+  if (/press|リリース/.test(raw)) return "press_release";
+  if (/seo|article|blog|記事/.test(raw)) return "seo_article";
+  if (/faq/.test(raw)) return "faq";
+  if (/gbp|google/.test(raw)) return "gbp_post";
+  if (/news/.test(raw)) return "news";
+  return "sns_post";
+}
+
+function coerceGoal(value: unknown): GoalKey | null {
+  const raw = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+  if (GOAL_KEYS.has(raw as GoalKey)) return raw as GoalKey;
+  if (/inquir|問合|問い合わせ/.test(raw)) return "inquiry";
+  if (/aware|認知/.test(raw)) return "awareness";
+  if (/book|purchase|予約|購入/.test(raw)) return "booking_purchase";
+  return null;
+}
+
+function coerceChannels(value: unknown): ChannelKey[] {
+  const list = Array.isArray(value) ? value : [];
+  const out = list
+    .map((c) => String(c).trim().toLowerCase())
+    .filter((c): c is ChannelKey => CHANNEL_KEYS.has(c as ChannelKey));
+  return out.length ? out : (["x"] as ChannelKey[]);
+}
+
+function asTextArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((v) => String(v).trim()).filter(Boolean).slice(0, 30);
+}
+
 // -------------------------------------------------- 提案 → 制作 → 検査 ----
 /**
  * AIライターが本文を書き、AIマーケターが媒体別に最適化し、
@@ -242,39 +291,52 @@ export async function produceFromProposal(params: {
 
   if (!proposal) throw new Error("proposal not found");
 
-  const type = params.contentType ?? "sns_post";
+  const type = coerceContentType(params.contentType ?? "sns_post");
+  const goal = coerceGoal(proposal.goal);
 
   // 1) AIライター
   const written = await writeContent({
     subjectId: proposal.subject_id,
     type,
-    theme: proposal.theme,
+    theme: proposal.theme || "本日の発信",
     audience: proposal.audience ?? undefined,
-    goal: proposal.goal ?? undefined,
+    goal: goal ?? undefined,
     cta: proposal.cta ?? undefined,
     intakeItemId: proposal.intake_item_id,
   });
 
-  const { data: content } = await sb
+  const title = String(written.title || proposal.theme || "無題").trim() || "無題";
+  const { data: content, error: insertError } = await sb
     .from("content_items")
     .insert({
       org_id: proposal.org_id,
       subject_id: proposal.subject_id,
       proposal_id: proposal.id,
       type,
-      title: written.title,
-      body: written.body,
-      summary: written.summary,
-      keywords: written.keywords ?? [],
-      cta: written.cta,
-      goal: proposal.goal,
+      title,
+      body: String(written.body ?? ""),
+      summary: written.summary ? String(written.summary) : null,
+      keywords: asTextArray(written.keywords),
+      cta: written.cta ? String(written.cta) : null,
+      goal,
       status: "fact_check",
       created_by: "writer",
     })
     .select("id")
     .single();
 
-  if (!content) throw new Error("failed to create content");
+  if (insertError || !content) {
+    console.error("[content_items insert]", {
+      message: insertError?.message,
+      code: insertError?.code,
+      details: insertError?.details,
+      hint: insertError?.hint,
+      type,
+      goal,
+      title,
+    });
+    throw new Error(insertError?.message ?? "failed to create content");
+  }
 
   // 2) 計測用の専用リンク
   const { data: subject } = await sb
