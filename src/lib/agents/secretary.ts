@@ -13,16 +13,20 @@ const ALLOWED_INQUIRY = [
   "未記入のカルテのうち、発信に必要な項目（商品、強み、事例、公開範囲）",
 ] as const;
 
+/** 1つの物語（1会話）で聞く質問の上限。 */
+export const STORY_QUESTION_MAX = 6;
+
 const SYSTEM = `あなたは日本企業の広報を支援する「AI秘書」です。
 役割は、LINEで広報制作と今後の発信に必要な情報だけを聞き取り、各担当へ渡すことです。
 
 厳守事項:
 - 質問は必ず1回に1問。80文字以内、敬語、絵文字なし。
-- 「聞いてよい項目」に含まれる不足だけを聞く。それ以外（雑談、気分、社内事情、弱みの深掘り、好みの世間話）は聞かない。
+- 1つの話につき質問は最大6問。重要な不足だけ聞く。
+- 「この物語ですでに聞いた質問」と同じ趣旨は、言い換えても絶対に聞かない。
+- 「聞いてよい項目」に含まれる不足だけを聞く。雑談・気分・社内事情・弱みの深掘りは聞かない。
 - 既に会話・カルテ・公式事実にあることは聞き返さない。
-- 制作に使えない曖昧な答えなら、同じテーマを具体化する1問だけ返す。
-- 不足がなければ complete=true。お礼と「いただいた内容で制作に進む」旨だけ伝える。
-- 公開可否は、固有名詞・数値・写真が出たときだけ確認する。
+- 不足がなければ complete=true。お礼と制作に進む旨だけ伝える。
+- 公開可否は、固有名詞・数値・写真が出たときだけ、かつ未質問のときだけ確認する。
 出力は指定されたJSON形式のみ。`;
 
 export type InterviewTurn = {
@@ -129,6 +133,48 @@ function formatGaps(gaps: ProductionGap[]): string {
   return gaps.map((g, i) => `${i + 1}. ${g.question}`).join("\n");
 }
 
+function normalizeAsk(text: string): string {
+  return text
+    .replace(/[？?。、,.！!\s]/g, "")
+    .replace(/ください|でしょうか|ますか|ですか|よろしいですか/g, "")
+    .slice(0, 40);
+}
+
+/** 同じ物語で重複判定するための質問の種類。 */
+function questionKind(text: string): string {
+  if (/公開|社名|写真|数値|対外/.test(text)) return "disclosable";
+  if (/いつ|時期|予定日|実施/.test(text)) return "when";
+  if (/成果|変化|効果|実績/.test(text)) return "result";
+  if (/対象|導入|届けたい|誰/.test(text)) return "who";
+  if (/発売|イベント|キャンペーン|今後.*告知|2.?4週間/.test(text)) return "upcoming";
+  if (/お客様の声|コメント|素材/.test(text)) return "voice";
+  if (/商品|サービス/.test(text)) return "products";
+  if (/強み/.test(text)) return "strengths";
+  if (/事例/.test(text)) return "cases";
+  if (/数字|価格|導入数/.test(text)) return "facts";
+  return normalizeAsk(text);
+}
+
+function alreadyAsked(history: Array<{ role: string; content: string }>): {
+  kinds: Set<string>;
+  texts: string[];
+} {
+  const texts = history
+    .filter((m) => m.role === "assistant" && /[？?]/.test(m.content))
+    .map((m) => m.content.trim());
+  return { kinds: new Set(texts.map(questionKind)), texts };
+}
+
+function wrapUpReply(): InterviewTurn {
+  return {
+    reply:
+      "ありがとうございます。いただいた内容をもとに広報案を作成します。追加があれば、そのときにお知らせください。",
+    complete: true,
+    extracted: { missing: [], disclosable: true, newsworthiness: 50 },
+    learnings: [],
+  };
+}
+
 /** LINEでの1往復を処理する。会話履歴と企業文脈をもとに次の1問を決める。 */
 export async function secretaryInterview(params: {
   subjectId: string;
@@ -138,11 +184,21 @@ export async function secretaryInterview(params: {
   askedCount: number;
   maxQuestions: number;
 }): Promise<InterviewTurn> {
+  const cap = Math.min(Math.max(1, params.maxQuestions || STORY_QUESTION_MAX), STORY_QUESTION_MAX);
+  const asked = alreadyAsked(params.history);
+  if (params.askedCount >= cap) {
+    return wrapUpReply();
+  }
+
   const ctx = await buildSubjectContext(params.subjectId);
-  const gaps = await listProductionGaps(params.subjectId);
+  const gaps = (await listProductionGaps(params.subjectId)).filter(
+    (g) => !asked.kinds.has(questionKind(g.question)),
+  );
+
+  const remaining = cap - params.askedCount;
 
   const transcript = params.history
-    .slice(-16)
+    .slice(-24)
     .map((m) => `${m.role === "user" ? "ユーザー" : "AI秘書"}: ${m.content}`)
     .join("\n");
 
@@ -151,8 +207,11 @@ export async function secretaryInterview(params: {
 # 聞いてよい項目（これ以外は聞かない）
 ${ALLOWED_INQUIRY.map((x) => `- ${x}`).join("\n")}
 
-# いま不足している制作・今後の材料
+# いま不足している制作・今後の材料（未質問のみ）
 ${formatGaps(gaps)}
+
+# この物語ですでに聞いた質問（同じ趣旨は再質問禁止）
+${asked.texts.map((t) => `- ${t}`).join("\n") || "(まだなし)"}
 
 # これまでの会話
 ${transcript || "(なし)"}
@@ -162,14 +221,14 @@ ${params.latest}
 ${params.attachments?.length ? `\n# 添付\n${params.attachments.map((a) => `- ${a.kind}`).join("\n")}` : ""}
 
 # 状況
-これまでの質問回数: ${params.askedCount} / 上限 ${params.maxQuestions}
+これまでの質問回数: ${params.askedCount} / 上限 ${cap}（残り ${remaining} 問まで）
 
 # 指示
 1. 最新の発言から、投稿・記事・事例に使える一次情報だけ抽出する。
-2. 不足リストまたは「聞いてよい項目」に該当し、まだ会話に無い重要情報が1つあるときだけ、次の1問を作る。
-3. 雑談・心情・社内の弱み・制作に使えない話は深追いせず、不足がなければ complete=true。
-4. 上限到達、または制作と今後の予定に必要な情報が揃ったら complete=true。お礼と制作に進む旨のみ。
-5. learnings は発信ルール（禁止表現・公開範囲）に限る。雑多な好みは入れない。
+2. 未質問の重要不足が1つあるときだけ、次の1問を作る。重要度: 公開可否 → 時期 → 成果 → 対象 → 今後の予定 → 素材。
+3. すでに聞いた質問と同じ趣旨は禁止（言い換えも禁止）。
+4. 残り0、または重要不足がなければ complete=true。お礼と制作に進む旨のみ。追加の質問を書かない。
+5. learnings は発信ルール（禁止表現・公開範囲）に限る。
 
 JSONのみを出力:
 {
@@ -197,18 +256,20 @@ JSONのみを出力:
     json: true,
     temperature: 0.3,
     maxTokens: 1200,
-    fallback: () => fallbackInterview(params, gaps),
+    fallback: () => fallbackInterview(params, gaps, cap, asked),
   });
 
-  const turn = result ?? fallbackInterview(params, gaps);
+  let turn = result ?? fallbackInterview(params, gaps, cap, asked);
+  if (turn.complete) return turn;
+
+  if (asked.kinds.has(questionKind(turn.reply)) || asked.texts.some((t) => normalizeAsk(t) === normalizeAsk(turn.reply))) {
+    const next = gaps.find((g) => !asked.kinds.has(questionKind(g.question)));
+    if (!next) return wrapUpReply();
+    turn = { ...turn, reply: next.question, complete: false };
+  }
+
   if (!gaps.length && params.askedCount >= 1 && !hasOpenProductionGap(turn)) {
-    return {
-      ...turn,
-      complete: true,
-      reply: turn.complete
-        ? turn.reply
-        : "ありがとうございます。いただいた内容をもとに広報案を作成します。追加の告知予定があれば、そのときにお知らせください。",
-    };
+    return wrapUpReply();
   }
   return turn;
 }
@@ -224,8 +285,10 @@ function hasOpenProductionGap(turn: InterviewTurn): boolean {
 function fallbackInterview(
   params: { latest: string; askedCount: number; maxQuestions: number },
   gaps: ProductionGap[],
+  cap: number,
+  asked: { kinds: Set<string> },
 ): InterviewTurn {
-  const ladder =
+  const ladder = (
     gaps.length > 0
       ? gaps.map((g) => g.question)
       : [
@@ -233,8 +296,9 @@ function fallbackInterview(
           "発表や実施の時期はいつ頃でしょうか。",
           "変化や成果を、書いてよい範囲で一言ください。",
           "今後告知したい発売・イベント・キャンペーンはありますか。",
-        ];
-  const done = params.askedCount >= Math.min(params.maxQuestions, ladder.length);
+        ]
+  ).filter((q) => !asked.kinds.has(questionKind(q)));
+  const done = params.askedCount >= cap || ladder.length === 0;
   return {
     reply: done
       ? "ありがとうございます。いただいた内容をもとに広報案を作成し、後ほどご提案します。"
