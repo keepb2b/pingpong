@@ -130,7 +130,7 @@ function fallbackContent(
 
 ${name}に関する広報コンテンツの下書きです。
 
-本文はAIモデル(OpenRouter)の接続後に自動生成されます。現在はAPIキーが未設定のため、
+本文はAIモデル(OpenRouter)接続時に自動生成されます。今回は接続できなかったため、
 構成のみを生成しています。
 
 ### 背景
@@ -144,7 +144,7 @@ ${params.theme}について、現場で起きた変化を具体的に記載し�
     summary: `${params.theme}についての広報コンテンツ(下書き)。`,
     keywords: [params.theme],
     cta: params.cta ?? "詳しくはお問い合わせください。",
-    unverified: ["OPENROUTER_API_KEY が未設定のため本文は自動生成されていません"],
+    unverified: ["OpenRouterに接続できなかったため本文は自動生成されていません"],
     headline_options: [],
   };
 }

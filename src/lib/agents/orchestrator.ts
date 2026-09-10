@@ -195,7 +195,10 @@ export async function runDailyCycle(subjectId: string): Promise<{
         subjectId,
         kind: "error",
         title: "コンテンツ制作に失敗しました",
-        body: err instanceof Error ? err.message : String(err),
+        body:
+          err instanceof Error
+            ? err.message
+            : String(err),
       });
     }
   }

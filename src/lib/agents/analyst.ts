@@ -163,7 +163,14 @@ JSONのみ:
     json: true,
     temperature: 0.2,
     maxTokens: 3000,
-    fallback: () => null,
+    fallback: () => ({
+      overall: "none",
+      passed: true,
+      blocked: false,
+      findings: [],
+      unverified_claims: [],
+      summary: "OpenRouterに接続できなかったため、機械チェックのみで判定しました。",
+    }),
   });
 
   const findings = mergeFindings(deterministic, result?.findings ?? []);

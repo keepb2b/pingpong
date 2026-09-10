@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AgentKey } from "@/lib/constants";
 
-const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
 export type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -31,16 +32,44 @@ export type CallResult<T = string> = {
 };
 
 export function isOpenRouterConfigured(): boolean {
-  return Boolean(process.env.OPENROUTER_API_KEY);
+  return Boolean(readApiKey());
+}
+
+/** 引用符・Bearer・空白を除く。OPENAI_API_KEY を優先し、なければ OPENROUTER_API_KEY。 */
+function cleanKey(raw: string | undefined): string {
+  return (raw ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .replace(/\s+/g, "");
+}
+
+function readApiKey(): string {
+  return cleanKey(process.env.OPENAI_API_KEY) || cleanKey(process.env.OPENROUTER_API_KEY);
+}
+
+function isOpenAiKey(key: string): boolean {
+  return key.startsWith("sk-proj-") || (key.startsWith("sk-") && !key.startsWith("sk-or-"));
+}
+
+function describeHttpError(provider: string, status: number, body: string): Error {
+  if (status === 401 || status === 403) {
+    return new Error(
+      `${provider}のAPIキー認証に失敗しました。` +
+        "OPENAI_API_KEY または OPENROUTER_API_KEY が実行時に渡っているか、キーが有効かを確認してください。",
+    );
+  }
+  return new Error(`${provider} ${status}: ${body.slice(0, 400)}`);
 }
 
 /**
- * 既定モデル。テスト期間中の最小コスト構成。
- * 選定条件: response_format(JSON)対応・日本語で正しい敬体・公式事実の数値を歪めない。
- * 変更は .env.local の OPENROUTER_MODEL / OPENROUTER_MODEL_FAST で行う。
+ * OpenRouter 既定モデル。テスト期間中の最小コスト構成。
+ * OpenAI キー (sk-proj- / sk-) のときは mistral 名は使えないので gpt-4o-mini に切り替える。
  */
 const DEFAULT_MODEL = "mistralai/mistral-small-24b-instruct-2501";
 const DEFAULT_MODEL_FAST = "mistralai/mistral-nemo";
+const OPENAI_DEFAULT_MODEL = "gpt-4o-mini";
+const OPENAI_DEFAULT_MODEL_FAST = "gpt-4o-mini";
 
 /**
  * HTTPヘッダはLatin-1しか送れない。
@@ -52,10 +81,16 @@ function headerSafe(value: string, fallback: string): string {
   return cleaned || fallback;
 }
 
-function defaultModel(fast?: boolean) {
-  return fast
-    ? process.env.OPENROUTER_MODEL_FAST || DEFAULT_MODEL_FAST
-    : process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+function defaultModel(fast?: boolean, openAi?: boolean) {
+  const fromEnv = fast
+    ? process.env.OPENAI_MODEL_FAST || process.env.OPENROUTER_MODEL_FAST
+    : process.env.OPENAI_MODEL || process.env.OPENROUTER_MODEL;
+  if (openAi) {
+    if (fromEnv?.startsWith("openai/")) return fromEnv.slice("openai/".length);
+    if (fromEnv && !fromEnv.includes("/")) return fromEnv;
+    return fast ? OPENAI_DEFAULT_MODEL_FAST : OPENAI_DEFAULT_MODEL;
+  }
+  return fromEnv || (fast ? DEFAULT_MODEL_FAST : DEFAULT_MODEL);
 }
 
 /** Pull the first JSON object/array out of a model response. */
@@ -107,8 +142,11 @@ export async function callModel<T = unknown>(
   opts: CallOptions,
 ): Promise<CallResult<T>> {
   const started = Date.now();
-  const model = opts.model || defaultModel(opts.fast);
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = readApiKey();
+  const openAi = Boolean(apiKey) && isOpenAiKey(apiKey);
+  const provider = openAi ? "OpenAI" : "OpenRouter";
+  const endpoint = openAi ? OPENAI_ENDPOINT : OPENROUTER_ENDPOINT;
+  const model = opts.model || defaultModel(opts.fast, openAi);
 
   if (!apiKey) {
     return {
@@ -123,29 +161,45 @@ export async function callModel<T = unknown>(
     };
   }
 
+  const messages = [...opts.messages];
+  if (opts.json) {
+    const joined = messages.map((m) => m.content).join("\n");
+    if (!/json/i.test(joined)) {
+      messages[0] = {
+        ...messages[0],
+        content: `${messages[0]?.content ?? ""}\nRespond with a JSON object only.`,
+      };
+    }
+  }
+
   const body: Record<string, unknown> = {
     model,
-    messages: opts.messages,
+    messages,
     temperature: opts.temperature ?? 0.6,
     max_tokens: opts.maxTokens ?? 3000,
   };
   if (opts.json) body.response_format = { type: "json_object" };
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+  if (!openAi) {
+    headers["HTTP-Referer"] = headerSafe(
+      process.env.OPENROUTER_SITE_URL ?? "",
+      "http://localhost:3000",
+    );
+    headers["X-Title"] = headerSafe(process.env.OPENROUTER_SITE_NAME ?? "", "AI Koho");
+  }
+
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(ENDPOINT, {
+      const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": headerSafe(
-            process.env.OPENROUTER_SITE_URL ?? "",
-            "http://localhost:3000",
-          ),
-          "X-Title": headerSafe(process.env.OPENROUTER_SITE_NAME ?? "", "AI Koho"),
-        },
+        cache: "no-store",
+        headers,
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(120_000),
       });
@@ -154,9 +208,9 @@ export async function callModel<T = unknown>(
         const text = await res.text();
         // 4xx other than rate limiting will not get better on retry
         if (res.status !== 429 && res.status < 500) {
-          throw new Error(`OpenRouter ${res.status}: ${text.slice(0, 400)}`);
+          throw describeHttpError(provider, res.status, text);
         }
-        lastError = new Error(`OpenRouter ${res.status}: ${text.slice(0, 200)}`);
+        lastError = describeHttpError(provider, res.status, text);
         await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
         continue;
       }
@@ -171,7 +225,7 @@ export async function callModel<T = unknown>(
       // 「AIが動いていないのに成功扱い」になるため、失敗として扱う。
       if (!content.trim()) {
         throw new Error(
-          `OpenRouter returned an empty response from ${data?.model ?? model} ` +
+          `${provider} returned an empty response from ${data?.model ?? model} ` +
             `(finish_reason=${choice?.finish_reason ?? "unknown"}, ` +
             `completion_tokens=${usage.completion_tokens ?? 0}). ` +
             `推論型モデルの場合は max_tokens を増やすか、非推論モデルを指定してください。`,
@@ -195,7 +249,7 @@ export async function callModel<T = unknown>(
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("OpenRouter call failed");
+  throw lastError instanceof Error ? lastError : new Error(`${provider} call failed`);
 }
 
 export type AgentRunInput = {
