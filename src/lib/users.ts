@@ -8,6 +8,9 @@ export function mapAuthError(message: string, fallback = "アカウント処理�
   if (/password/i.test(message) && /weak|least|character/i.test(message)) {
     return "パスワードは8文字以上にしてください";
   }
+  if (/fetch failed|failed to fetch|enotfound|econnreset|etimedout|und_err/i.test(message)) {
+    return "データベース(Supabase)に接続できませんでした。しばらくしてから再度お試しください。";
+  }
   if (/rate limit|too many/i.test(message)) {
     return "操作が集中しています。しばらくしてから再度お試しください";
   }

@@ -319,12 +319,12 @@ async function handleCommand(
     await replyMessage(replyToken, [
       textMessage(
         "投稿予定\n\n" +
-          posts
-            .map(
-              (p) =>
-                `${new Date(p.scheduled_for!).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} ${CHANNEL_LABEL[p.channel as keyof typeof CHANNEL_LABEL] ?? p.channel}\n${String(p.body).slice(0, 50)}`,
-            )
-            .join("\n\n"),
+        posts
+          .map(
+            (p) =>
+              `${new Date(p.scheduled_for!).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} ${CHANNEL_LABEL[p.channel as keyof typeof CHANNEL_LABEL] ?? p.channel}\n${String(p.body).slice(0, 50)}`,
+          )
+          .join("\n\n"),
       ),
     ]);
     return true;
@@ -367,12 +367,12 @@ async function handleCommand(
     await replyMessage(replyToken, [
       textMessage(
         `${score.period} AI広報スコア: ${score.total}点\n\n` +
-          `広報基盤 ${score.foundation} / 発信継続性 ${score.consistency}\n` +
-          `品質 ${score.quality} / ブランド整合 ${score.brand_fit}\n` +
-          `SEO・AEO ${score.seo_aeo} / SNS到達 ${score.sns_reach}\n` +
-          `顧客導線 ${score.funnel} / CV・売上 ${score.cv_revenue}\n` +
-          `口コミ ${score.reputation} / リスク管理 ${score.risk_mgmt}\n\n` +
-          (improvements.length ? `改善提案:\n${improvements.slice(0, 3).map((i) => `・${i.action}`).join("\n")}` : ""),
+        `広報基盤 ${score.foundation} / 発信継続性 ${score.consistency}\n` +
+        `品質 ${score.quality} / ブランド整合 ${score.brand_fit}\n` +
+        `SEO・AEO ${score.seo_aeo} / SNS到達 ${score.sns_reach}\n` +
+        `顧客導線 ${score.funnel} / CV・売上 ${score.cv_revenue}\n` +
+        `口コミ ${score.reputation} / リスク管理 ${score.risk_mgmt}\n\n` +
+        (improvements.length ? `改善提案:\n${improvements.slice(0, 3).map((i) => `・${i.action}`).join("\n")}` : ""),
       ),
     ]);
     return true;
