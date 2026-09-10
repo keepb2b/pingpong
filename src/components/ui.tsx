@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EyeIcon, EyeOffIcon, CameraIcon, UserIcon } from "@/components/icons/NavIcons";
+import type { BadgeTone } from "@/lib/badge-tone";
+
+export type { BadgeTone } from "@/lib/badge-tone";
+export { riskTone, statusTone } from "@/lib/badge-tone";
 
 /* ============================================================== Button ====
    文字の可読性を最優先。地色と文字色の組み合わせは globals.css で固定し、
@@ -150,8 +154,6 @@ const BADGE_TONES = {
   info: "bg-[#e9f0f8] text-[#144a80] border-[#a9c6e4] dark:bg-[#132537] dark:text-[#9cc6ee] dark:border-[#2a4b6e]",
 } as const;
 
-export type BadgeTone = keyof typeof BADGE_TONES;
-
 export function Badge({
   children,
   tone = "neutral",
@@ -168,23 +170,6 @@ export function Badge({
       {children}
     </span>
   );
-}
-
-export function riskTone(risk: string): BadgeTone {
-  return risk === "critical" || risk === "high"
-    ? "bad"
-    : risk === "medium"
-      ? "warn"
-      : risk === "low"
-        ? "info"
-        : "good";
-}
-
-export function statusTone(status: string): BadgeTone {
-  if (["published", "approved"].includes(status)) return "good";
-  if (["pending_approval", "fact_check", "scheduled", "proposed"].includes(status)) return "warn";
-  if (["rejected", "failed"].includes(status)) return "bad";
-  return "neutral";
 }
 
 /* ============================================================ StatTile ==== */
