@@ -207,7 +207,11 @@ async function runInterviews(opts?: { ignoreHour?: boolean }): Promise<{ sent: n
     }
 
     try {
-      const { question, reason } = await secretaryDailyPrompt(s.subject_id);
+      const { question, reason, skip } = await secretaryDailyPrompt(s.subject_id);
+      if (skip || !question) {
+        skipped++;
+        continue;
+      }
 
       if (isLineConfigured()) {
         for (const a of accounts) {
