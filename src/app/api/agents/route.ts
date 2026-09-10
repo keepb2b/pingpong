@@ -1,6 +1,6 @@
 import { handle, requireOrg, requireSubject, requireRole, ApiError } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { runDailyCycle, produceFromProposal, runMonthlyReview, currentPeriod } from "@/lib/agents/orchestrator";
+import { runDailyCycle, produceFromProposal, runMonthlyReview, currentPeriod, coerceContentType } from "@/lib/agents/orchestrator";
 import { buildStrategy, decideToday, recommendCadence } from "@/lib/agents/strategist";
 import { writeContent } from "@/lib/agents/writer";
 import { adaptToChannels, designFunnel, draftReply } from "@/lib/agents/marketer";
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         if (!proposalId) throw new ApiError("proposalId が必要です");
         return produceFromProposal({
           proposalId,
-          contentType: body.type as ContentTypeKey | undefined,
+          contentType: coerceContentType(body.type),
         });
       }
 
