@@ -184,7 +184,7 @@ async function handleMessage(event: LineEvent, userId: string) {
     latest: userText,
     attachments,
     askedCount: conversation.question_index,
-    maxQuestions: settings?.max_questions_per_session ?? 5,
+    maxQuestions: Math.min(settings?.max_questions_per_session ?? 6, 6),
   });
 
   await sb.from("messages").insert({
