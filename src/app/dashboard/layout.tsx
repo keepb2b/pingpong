@@ -10,7 +10,13 @@ import { AccountMenu } from "@/components/dashboard/AccountMenu";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await getOrgContext();
+  let ctx;
+  try {
+    ctx = await getOrgContext();
+  } catch (err) {
+    console.error("[dashboard layout] getOrgContext", err);
+    throw err;
+  }
   if (!ctx) redirect("/onboarding");
 
   const sb = await supabaseServer();

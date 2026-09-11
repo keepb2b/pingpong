@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
-import { PageHeader, ActionButton, formatDateTime } from "@/components/dashboard/shared";
+import { PageHeader, ActionButton } from "@/components/dashboard/shared";
+import { formatDateTime } from "@/lib/format-date";
 import { AddOutlet, CreatePitch } from "./Actions";
 
 export const dynamic = "force-dynamic";

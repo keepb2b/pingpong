@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, Breadcrumb } from "@/components/ui";
-import { PageHeader, formatDateTime } from "@/components/dashboard/shared";
+import { PageHeader } from "@/components/dashboard/shared";
+import { formatDateTime } from "@/lib/format-date";
 import { AccountForm, PasswordForm, DeleteAccountForm } from "./Forms";
 import { ROLE_LABEL, SUBJECT_TYPE_LABEL } from "@/lib/constants";
 

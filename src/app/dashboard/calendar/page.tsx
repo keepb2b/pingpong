@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { statusTone } from "@/lib/badge-tone";
-import { PageHeader, ActionButton, formatDateTime } from "@/components/dashboard/shared";
+import { PageHeader, ActionButton } from "@/components/dashboard/shared";
+import { formatDateTime } from "@/lib/format-date";
 import { CHANNEL_LABEL, STATUS_LABEL, type ChannelKey } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState, StatTile } from "@/components/ui";
-import { PageHeader, formatDate } from "@/components/dashboard/shared";
+import { PageHeader } from "@/components/dashboard/shared";
+import { formatDate } from "@/lib/format-date";
 import { FactTable, AddFact } from "./Actions";
 import { ShieldCheckIcon } from "@/components/icons/AgentIcons";
 

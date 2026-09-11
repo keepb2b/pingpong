@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile, EmptyState } from "@/components/ui";
 import { statusTone, riskTone } from "@/lib/badge-tone";
-import { PageHeader, AgentButton, formatDateTime } from "@/components/dashboard/shared";
+import { PageHeader, AgentButton } from "@/components/dashboard/shared";
+import { formatDateTime } from "@/lib/format-date";
 import { ScoreRing } from "@/components/charts";
 import { AgentIcon, LineIcon, LoopIcon } from "@/components/icons/AgentIcons";
 import { DocumentIcon } from "@/components/icons/NavIcons";
@@ -263,7 +264,7 @@ export default async function DashboardHome() {
                     <p className="muted text-xs mt-1.5 leading-relaxed">{p.reason}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                       {p.goal && <Badge tone="brand">{GOAL_LABEL[p.goal as keyof typeof GOAL_LABEL]}</Badge>}
-                      {(p.channels ?? []).map((ch: string) => (
+                      {(Array.isArray(p.channels) ? p.channels : []).map((ch: string) => (
                         <Badge key={ch}>{CHANNEL_LABEL[ch as keyof typeof CHANNEL_LABEL] ?? ch}</Badge>
                       ))}
                       {p.cta && <span className="text-[11px] muted">CTA: {p.cta}</span>}
