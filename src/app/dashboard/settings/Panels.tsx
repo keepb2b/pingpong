@@ -94,7 +94,7 @@ export function LineLinkPanel({
           <code className="block p-2 rounded bg-[var(--surface-3)] font-mono">
             LINE_CHANNEL_SECRET / LINE_CHANNEL_ACCESS_TOKEN
           </code>
-          <p>4. 応答メッセージをOFF、WebhookをONにする</p>
+          <p>4. 応答メッセージをOFF、「Webhookの利用」をONにする（承認ボタンはWebhookのpostbackで動きます）</p>
         </div>
       </details>
     </div>

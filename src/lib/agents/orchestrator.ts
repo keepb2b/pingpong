@@ -561,6 +561,15 @@ export async function approveContent(params: {
 
   if (!content) throw new Error("content not found");
 
+  const alreadyDecided =
+    (params.action === "approve" && content.status === "approved") ||
+    (params.action === "reject" && content.status === "rejected") ||
+    (params.action === "hold" && content.status === "on_hold") ||
+    (params.action === "revise" && content.status === "draft");
+  if (alreadyDecided) {
+    return { status: content.status, scheduledPosts: 0 };
+  }
+
   await sb.from("approvals").insert({
     org_id: content.org_id,
     content_id: content.id,
