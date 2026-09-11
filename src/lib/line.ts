@@ -4,52 +4,23 @@ const API = "https://api.line.me/v2/bot";
 const DATA_API = "https://api-data.line.me/v2/bot";
 
 function token(): string {
-  const t = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
+  const t = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!t) throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not configured");
   return t;
 }
 
 export function isLineConfigured(): boolean {
-  return Boolean(
-    process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim() && process.env.LINE_CHANNEL_SECRET?.trim(),
-  );
-}
-
-function actionSecret() {
-  return process.env.LINE_CHANNEL_SECRET || process.env.CRON_SECRET || "line-act";
-}
-
-/** LINEボタン用の署名付き操作URL（Webhook不要）。 */
-export function lineActionUrl(base: string, action: string, contentId: string): string {
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
-  const payload = `${action}:${contentId}:${exp}`;
-  const sig = crypto.createHmac("sha256", actionSecret()).update(payload).digest("hex").slice(0, 32);
-  const origin = base.replace(/\/$/, "");
-  return `${origin}/api/line/act?action=${encodeURIComponent(action)}&id=${encodeURIComponent(contentId)}&exp=${exp}&sig=${sig}`;
-}
-
-export function verifyLineActionToken(action: string, contentId: string, exp: string, sig: string): boolean {
-  const expNum = Number(exp);
-  if (!expNum || expNum * 1000 < Date.now()) return false;
-  const payload = `${action}:${contentId}:${exp}`;
-  const expected = crypto.createHmac("sha256", actionSecret()).update(payload).digest("hex").slice(0, 32);
-  if (expected.length !== sig.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
+  return Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET);
 }
 
 /** Webhook署名検証 (改ざん・なりすまし防止) */
 export function verifyLineSignature(rawBody: string, signature: string | null): boolean {
-  const secret = process.env.LINE_CHANNEL_SECRET?.trim();
-  const sig = signature?.trim() ?? null;
-  if (!secret || !sig) return false;
+  const secret = process.env.LINE_CHANNEL_SECRET;
+  if (!secret || !signature) return false;
   const expected = crypto.createHmac("SHA256", secret).update(rawBody).digest("base64");
   const a = Buffer.from(expected);
-  const b = Buffer.from(sig);
+  const b = Buffer.from(signature);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-
-export function contentPostbackData(action: string, contentId: string): string {
-  return `action=${action}&id=${contentId}`;
 }
 
 export type LineMessage = Record<string, unknown>;
@@ -140,40 +111,10 @@ export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
       { type: "text", text: (value || "—").slice(0, 60), wrap: true, color: "#262b41", size: "sm", flex: 5 },
     ],
   });
-  const btn = (label: string, action: string, style: string, color?: string) => ({
-    type: "button",
-    style,
-    ...(color ? { color } : {}),
-    height: "sm",
-    action: {
-      type: "postback",
-      label,
-      data: contentPostbackData(action, card.id),
-      displayText: label,
-    },
-  });
 
   return {
     type: "flex",
     altText: `【広報提案】${card.theme}`,
-    quickReply: {
-      items: (
-        [
-          ["承認", "approve"],
-          ["修正", "revise"],
-          ["保留", "hold"],
-          ["投稿しない", "reject"],
-        ] as const
-      ).map(([label, action]) => ({
-        type: "action",
-        action: {
-          type: "postback",
-          label,
-          data: contentPostbackData(action, card.id),
-          displayText: label,
-        },
-      })),
-    },
     contents: {
       type: "bubble",
       size: "mega",
@@ -220,8 +161,19 @@ export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
             layout: "horizontal",
             spacing: "sm",
             contents: [
-              btn("承認", "approve", "primary", "#4f46e5"),
-              btn("修正", "revise", "secondary"),
+              {
+                type: "button",
+                style: "primary",
+                color: "#4f46e5",
+                height: "sm",
+                action: { type: "postback", label: "承認", data: `action=approve&id=${card.id}`, displayText: "承認します" },
+              },
+              {
+                type: "button",
+                style: "secondary",
+                height: "sm",
+                action: { type: "postback", label: "修正", data: `action=revise&id=${card.id}`, displayText: "修正したいです" },
+              },
             ],
           },
           {
@@ -229,24 +181,26 @@ export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
             layout: "horizontal",
             spacing: "sm",
             contents: [
-              btn("保留", "hold", "link"),
-              btn("投稿しない", "reject", "link"),
+              {
+                type: "button",
+                style: "link",
+                height: "sm",
+                action: { type: "postback", label: "保留", data: `action=hold&id=${card.id}`, displayText: "保留します" },
+              },
+              {
+                type: "button",
+                style: "link",
+                height: "sm",
+                action: { type: "postback", label: "投稿しない", data: `action=reject&id=${card.id}`, displayText: "投稿しません" },
+              },
             ],
           },
-          ...(appUrl.startsWith("https://")
-            ? [
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: {
-                    type: "uri" as const,
-                    label: "詳細を確認",
-                    uri: `${appUrl.replace(/\/$/, "")}/dashboard/content/${card.id}`,
-                  },
-                },
-              ]
-            : []),
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
+            action: { type: "uri", label: "詳細を確認", uri: `${appUrl}/dashboard/content/${card.id}` },
+          },
         ],
       },
     },

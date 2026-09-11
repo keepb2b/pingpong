@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   verifyLineSignature,
   replyMessage,
-  pushMessage,
   textMessage,
+  quickReply,
   getProfile,
   getMessageContent,
   proposalFlex,
@@ -12,77 +12,70 @@ import {
 import { secretaryInterview } from "@/lib/agents/secretary";
 import { approveContent } from "@/lib/agents/orchestrator";
 import { appUrl } from "@/lib/tracking";
-import { CHANNEL_LABEL } from "@/lib/constants";
+import { STATUS_LABEL, CHANNEL_LABEL } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
-
-/** ブラウザで URL が生きているか確認する用。LINE 本体は POST のみ。 */
-export async function GET() {
-  console.log("[line] webhook GET (health check)");
-  return NextResponse.json({
-    ok: true,
-    webhook: "/api/line/webhook",
-    hint: "This URL is reachable. LINE buttons send POST here; they will not show in this GET.",
-  });
-}
+export const maxDuration = 60;
 
 type LineEvent = {
   type: string;
-  mode?: string;
   replyToken?: string;
   source?: { userId?: string };
   message?: { id: string; type: string; text?: string; fileName?: string };
   postback?: { data: string };
 };
 
+/** LINE管理画面の「検証」は GET または空の events を送る。すぐ 200 を返す。 */
+export async function GET() {
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(request: Request) {
   const raw = await request.text();
-  const signature = request.headers.get("x-line-signature");
   let body: { events?: LineEvent[] } = {};
   try {
     body = raw ? (JSON.parse(raw) as { events?: LineEvent[] }) : {};
   } catch {
-    console.error("[line] webhook body is not JSON");
-    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+    return NextResponse.json({ ok: true });
   }
 
   const events = body.events ?? [];
-  console.log("[line] webhook POST", {
-    hasSignature: Boolean(signature),
-    bytes: raw.length,
-    eventCount: events.length,
-    types: events.map((e) => e.type),
-    postbacks: events
-      .filter((e) => e.type === "postback")
-      .map((e) => e.postback?.data ?? null),
-  });
+  // 検証リクエスト（events: []）は署名が無い／待ち時間が短いことがある
+  if (events.length === 0) {
+    return NextResponse.json({ ok: true });
+  }
 
+  const signature = request.headers.get("x-line-signature");
   if (!verifyLineSignature(raw, signature)) {
-    console.error("[line] invalid signature — check LINE_CHANNEL_SECRET matches Messaging API channel");
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  await Promise.all(
-    events.map((event) =>
-      handleEvent(event).catch(async (err) => {
-        console.error("[line] event failed", event.type, err);
-        const fallback = [textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。")];
-        if (event.replyToken) {
-          await replyMessage(event.replyToken, fallback).catch(() => undefined);
-        } else if (event.source?.userId) {
-          await pushMessage(event.source.userId, fallback).catch(() => undefined);
-        }
-      }),
-    ),
-  );
+  const run = () =>
+    Promise.all(
+      events.map((event) =>
+        handleEvent(event).catch(async (err) => {
+          console.error("[line] event failed", err);
+          if (event.replyToken) {
+            await replyMessage(event.replyToken, [
+              textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
+            ]).catch(() => undefined);
+          }
+        }),
+      ),
+    );
+
+  // LINEは数秒以内の HTTP 200 を要求する。処理は応答後に続ける。
+  try {
+    after(() => run());
+  } catch {
+    void run();
+  }
 
   return NextResponse.json({ ok: true });
 }
 
 async function handleEvent(event: LineEvent) {
-  if (event.mode === "standby") return;
   const userId = event.source?.userId;
   if (!userId) return;
 
@@ -157,14 +150,7 @@ async function handleMessage(event: LineEvent, userId: string) {
   // コマンド処理
   if (event.message.type === "text") {
     const text = (event.message.text ?? "").trim();
-    const handled = await handleCommand(
-      text,
-      account.org_id,
-      subjectId,
-      replyToken,
-      account.user_id,
-      userId,
-    );
+    const handled = await handleCommand(text, account.org_id, subjectId, replyToken);
     if (handled) return;
   }
 
@@ -276,24 +262,8 @@ async function handleCommand(
   orgId: string,
   subjectId: string,
   replyToken: string,
-  userId?: string | null,
-  lineUserId?: string,
 ): Promise<boolean> {
   const sb = supabaseAdmin();
-
-  const decision = parseContentDecision(text);
-  if (decision) {
-    await applyLineContentAction({
-      orgId,
-      subjectId,
-      userId: userId ?? null,
-      lineUserId,
-      replyToken,
-      action: decision.action,
-      contentId: decision.contentId,
-    });
-    return true;
-  }
 
   if (/^(ヘルプ|help|使い方)$/i.test(text)) {
     await replyMessage(replyToken, [
@@ -452,144 +422,30 @@ async function handleCommand(
 
 // ---------------------------------------------------------- ポストバック --
 async function handlePostback(event: LineEvent, userId: string) {
-  const replyToken = event.replyToken ?? null;
-  if (!event.postback) return;
+  const sb = supabaseAdmin();
+  const replyToken = event.replyToken;
+  if (!replyToken || !event.postback) return;
 
-  const parsed = parsePostbackPayload(event.postback.data);
-  const action = parsed.action;
-  const id = parsed.id;
-  console.log("[line] handlePostback", { data: event.postback.data, action, id });
+  const params = new URLSearchParams(event.postback.data);
+  const action = params.get("action");
+  const id = params.get("id");
 
   const account = await findAccount(userId);
-
-  if (!account) {
-    await deliverLine({ replyToken, lineUserId: userId }, [textMessage("先にLINE連携が必要です。")]);
-    return;
-  }
-
-  const subjectId = account.active_subject_id ?? (await primarySubject(account.org_id));
-  if (action === "list_pending" && subjectId) {
-    await handleCommand("提案", account.org_id, subjectId, replyToken ?? "", account.user_id, userId);
-    return;
-  }
-  if (action === "list_scheduled" && subjectId) {
-    await handleCommand("予定", account.org_id, subjectId, replyToken ?? "", account.user_id, userId);
+  if (!account || !id) {
+    await replyMessage(replyToken, [textMessage("操作を受け付けられませんでした。")]);
     return;
   }
 
   if (!["approve", "revise", "hold", "reject"].includes(action ?? "")) {
-    await deliverLine({ replyToken, lineUserId: userId }, [textMessage("不明な操作です。")]);
-    return;
-  }
-
-  await deliverLine({ replyToken, lineUserId: userId }, [textMessage("受け付けました。反映しています…")]);
-
-  await applyLineContentAction({
-    orgId: account.org_id,
-    subjectId: subjectId ?? "",
-    userId: account.user_id,
-    lineUserId: userId,
-    replyToken: null,
-    action: action as "approve" | "revise" | "hold" | "reject",
-    contentId: id,
-  });
-}
-
-function parsePostbackPayload(data: string | undefined): {
-  action: string | null;
-  id: string | null;
-} {
-  if (!data) return { action: null, id: null };
-  try {
-    const json = JSON.parse(data) as { action?: string; id?: string };
-    if (json && typeof json === "object" && (json.action || json.id)) {
-      return { action: json.action ?? null, id: json.id ?? null };
-    }
-  } catch {
-    // querystring or "approve:uuid"
-  }
-  const params = new URLSearchParams(data);
-  if (params.get("action")) {
-    return { action: params.get("action"), id: params.get("id") };
-  }
-  const compact = data.match(/^(approve|revise|hold|reject)[:|=]([0-9a-f-]{36})$/i);
-  if (compact) return { action: compact[1].toLowerCase(), id: compact[2] };
-  return { action: null, id: null };
-}
-
-async function deliverLine(
-  dest: { replyToken?: string | null; lineUserId?: string | null },
-  messages: ReturnType<typeof textMessage>[],
-) {
-  if (dest.replyToken) {
-    try {
-      await replyMessage(dest.replyToken, messages);
-      return;
-    } catch (err) {
-      console.error("[line] reply failed, falling back to push", err);
-    }
-  }
-  if (dest.lineUserId) {
-    await pushMessage(dest.lineUserId, messages);
-  }
-}
-
-function parseContentDecision(text: string): {
-  action: "approve" | "revise" | "hold" | "reject";
-  contentId: string | null;
-} | null {
-  const m = text.match(
-    /^(承認します|修正したいです|保留します|投稿しません|承認|修正|保留|投稿しない)\s*[:：]\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
-  );
-  const m2 =
-    m ??
-    text.match(
-      /^(承認します|修正したいです|保留します|投稿しません)\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$/i,
-    );
-  if (!m2) return null;
-  const label = m2[1];
-  const action: "approve" | "revise" | "hold" | "reject" =
-    /修正/.test(label) ? "revise" : /保留/.test(label) ? "hold" : /投稿しない|投稿しません/.test(label) ? "reject" : "approve";
-  return { action, contentId: m2[2] ?? null };
-}
-
-async function applyLineContentAction(params: {
-  orgId: string;
-  subjectId: string;
-  userId: string | null;
-  lineUserId?: string;
-  replyToken: string | null;
-  action: "approve" | "revise" | "hold" | "reject";
-  contentId: string | null;
-}) {
-  const sb = supabaseAdmin();
-  let id = params.contentId;
-  if (!id && params.subjectId) {
-    const { data: latest } = await sb
-      .from("content_items")
-      .select("id")
-      .eq("org_id", params.orgId)
-      .eq("subject_id", params.subjectId)
-      .eq("status", "pending_approval")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    id = latest?.id ?? null;
-  }
-  if (!id) {
-    await deliverLine(
-      { replyToken: params.replyToken, lineUserId: params.lineUserId },
-      [textMessage("対象の広報案が見つかりませんでした。「提案」と送ると一覧を出せます。")],
-    );
+    await replyMessage(replyToken, [textMessage("不明な操作です。")]);
     return;
   }
 
   const result = await approveContent({
     contentId: id,
-    action: params.action,
-    userId: params.userId,
+    action: action as "approve" | "revise" | "hold" | "reject",
+    userId: account.user_id,
     via: "line",
-    comment: "LINEのボタンから操作",
   });
 
   const messages: Record<string, string> = {
@@ -599,15 +455,20 @@ async function applyLineContentAction(params: {
     reject: "投稿しない設定にしました。今後の提案に反映します。",
   };
 
-  if (params.action === "revise" && params.subjectId && params.lineUserId) {
-    const conv = await getOrCreateConversation(params.orgId, params.subjectId, params.lineUserId);
-    await sb
-      .from("conversations")
-      .update({ topic: `revise:${id}`, status: "open" })
-      .eq("id", conv.id);
+  if (action === "revise") {
+    // 修正指示を受けるため会話を開いておく
+    const subjectId = account.active_subject_id ?? (await primarySubject(account.org_id));
+    if (subjectId) {
+      const conv = await getOrCreateConversation(account.org_id, subjectId, userId);
+      await sb
+        .from("conversations")
+        .update({ topic: `revise:${id}`, status: "open" })
+        .eq("id", conv.id);
+    }
   }
 
-  if (params.action === "reject" || params.action === "hold") {
+  // 却下・保留の理由は学習材料になる
+  if (action === "reject" || action === "hold") {
     const { data: content } = await sb
       .from("content_items")
       .select("subject_id, title, type")
@@ -615,20 +476,22 @@ async function applyLineContentAction(params: {
       .maybeSingle();
     if (content) {
       await sb.from("learnings").insert({
-        org_id: params.orgId,
+        org_id: account.org_id,
         subject_id: content.subject_id,
         category: "rule",
-        statement: `「${content.title}」(${content.type})は${params.action === "reject" ? "投稿しない" : "保留"}と判断された`,
+        statement: `「${content.title}」(${content.type})は${action === "reject" ? "投稿しない" : "保留"}と判断された`,
         evidence: "LINEでのユーザー操作",
         status: "pending",
       });
     }
   }
 
-  await deliverLine(
-    { replyToken: params.replyToken, lineUserId: params.lineUserId },
-    [textMessage(messages[params.action])],
-  );
+  await replyMessage(replyToken, [
+    quickReply(messages[action!], [
+      { label: "承認待ちを見る", data: "action=list_pending" },
+      { label: "投稿予定を見る", data: "action=list_scheduled" },
+    ]),
+  ]);
 }
 
 // ------------------------------------------------------------- ヘルパー ---
