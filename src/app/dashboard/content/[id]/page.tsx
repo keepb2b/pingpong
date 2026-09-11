@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge } from "@/components/ui";
 import { statusTone, riskTone } from "@/lib/badge-tone";
-import { PageHeader, formatDateTime } from "@/components/dashboard/shared";
+import { PageHeader } from "@/components/dashboard/shared";
+import { formatDateTime } from "@/lib/format-date";
 import { ApprovalPanel, VariantEditor, ContentEditor } from "./Panels";
 import { AgentIcon, ShieldCheckIcon, AlertIcon } from "@/components/icons/AgentIcons";
 import {

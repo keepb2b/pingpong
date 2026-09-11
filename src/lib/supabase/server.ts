@@ -60,39 +60,47 @@ export type OrgContext = {
 
 /** Resolves the caller's organization + active 広報対象. */
 export async function getOrgContext(): Promise<OrgContext | null> {
-  const sb = await supabaseServer();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return null;
+  try {
+    const sb = await supabaseServer();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    if (!user) return null;
 
-  const { data: membership } = await sb
-    .from("memberships")
-    .select("org_id, role, organizations(name)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    const { data: membership } = await sb
+      .from("memberships")
+      .select("org_id, role, organizations(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
-  if (!membership) return null;
+    if (!membership) return null;
 
-  const { data: subject } = await sb
-    .from("subjects")
-    .select("id")
-    .eq("org_id", membership.org_id)
-    .eq("active", true)
-    .order("is_primary", { ascending: false })
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    const { data: subject } = await sb
+      .from("subjects")
+      .select("id")
+      .eq("org_id", membership.org_id)
+      .eq("active", true)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
-  const org = membership.organizations as unknown as { name: string } | null;
+    const orgRaw = membership.organizations as unknown;
+    const org = Array.isArray(orgRaw)
+      ? (orgRaw[0] as { name?: string } | undefined)
+      : (orgRaw as { name?: string } | null);
 
-  return {
-    userId: user.id,
-    orgId: membership.org_id,
-    role: membership.role,
-    orgName: org?.name ?? "",
-    subjectId: subject?.id ?? null,
-  };
+    return {
+      userId: user.id,
+      orgId: membership.org_id,
+      role: membership.role,
+      orgName: org?.name ?? "",
+      subjectId: subject?.id ?? null,
+    };
+  } catch (err) {
+    console.error("[getOrgContext]", err);
+    return null;
+  }
 }

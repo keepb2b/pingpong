@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile } from "@/components/ui";
-import { PageHeader, formatDate } from "@/components/dashboard/shared";
+import { PageHeader } from "@/components/dashboard/shared";
+import { formatDate } from "@/lib/format-date";
 import { BillingActions } from "./Actions";
 import { PRICING, SETUP_INCLUDES, yen } from "@/lib/constants";
 
