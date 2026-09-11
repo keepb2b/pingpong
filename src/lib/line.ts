@@ -23,6 +23,43 @@ export function verifyLineSignature(rawBody: string, signature: string | null): 
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+const ACTION_TTL_SEC = 60 * 60 * 24 * 14;
+
+function actionSecret(): string {
+  return process.env.LINE_CHANNEL_SECRET || process.env.CRON_SECRET || "";
+}
+
+/** LINEの承認ボタン用。改ざんできない短い署名付きリンクを作る。 */
+export function signLineActionToken(action: string, id: string, ttlSec = ACTION_TTL_SEC) {
+  const exp = String(Math.floor(Date.now() / 1000) + ttlSec);
+  const payload = `${action}.${id}.${exp}`;
+  const sig = crypto.createHmac("sha256", actionSecret()).update(payload).digest("base64url");
+  return { exp, sig };
+}
+
+export function verifyLineActionToken(action: string, id: string, exp: string, sig: string): boolean {
+  const secret = actionSecret();
+  if (!secret || !action || !id || !exp || !sig) return false;
+  const expNum = Number(exp);
+  if (!Number.isFinite(expNum) || expNum * 1000 < Date.now()) return false;
+  const payload = `${action}.${id}.${exp}`;
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  try {
+    const a = Buffer.from(expected);
+    const b = Buffer.from(sig);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+export function lineActUrl(appBase: string, action: string, id: string): string {
+  const { exp, sig } = signLineActionToken(action, id);
+  const base = appBase.replace(/\/$/, "");
+  const q = new URLSearchParams({ action, id, exp, sig });
+  return `${base}/api/line/act?${q.toString()}`;
+}
+
 export type LineMessage = Record<string, unknown>;
 
 export async function replyMessage(replyToken: string, messages: LineMessage[]) {
@@ -166,13 +203,13 @@ export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
                 style: "primary",
                 color: "#4f46e5",
                 height: "sm",
-                action: { type: "postback", label: "承認", data: `action=approve&id=${card.id}`, displayText: "承認します" },
+                action: { type: "uri", label: "承認", uri: lineActUrl(appUrl, "approve", card.id) },
               },
               {
                 type: "button",
                 style: "secondary",
                 height: "sm",
-                action: { type: "postback", label: "修正", data: `action=revise&id=${card.id}`, displayText: "修正したいです" },
+                action: { type: "uri", label: "修正", uri: lineActUrl(appUrl, "revise", card.id) },
               },
             ],
           },
@@ -185,13 +222,13 @@ export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
                 type: "button",
                 style: "link",
                 height: "sm",
-                action: { type: "postback", label: "保留", data: `action=hold&id=${card.id}`, displayText: "保留します" },
+                action: { type: "uri", label: "保留", uri: lineActUrl(appUrl, "hold", card.id) },
               },
               {
                 type: "button",
                 style: "link",
                 height: "sm",
-                action: { type: "postback", label: "投稿しない", data: `action=reject&id=${card.id}`, displayText: "投稿しません" },
+                action: { type: "uri", label: "投稿しない", uri: lineActUrl(appUrl, "reject", card.id) },
               },
             ],
           },

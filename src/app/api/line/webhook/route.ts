@@ -1,4 +1,4 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   verifyLineSignature,
@@ -16,7 +16,6 @@ import { STATUS_LABEL, CHANNEL_LABEL } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
 
 type LineEvent = {
   type: string;
@@ -26,51 +25,30 @@ type LineEvent = {
   postback?: { data: string };
 };
 
-/** LINE管理画面の「検証」は GET または空の events を送る。すぐ 200 を返す。 */
-export async function GET() {
-  return NextResponse.json({ ok: true });
-}
-
 export async function POST(request: Request) {
   const raw = await request.text();
-  let body: { events?: LineEvent[] } = {};
-  try {
-    body = raw ? (JSON.parse(raw) as { events?: LineEvent[] }) : {};
-  } catch {
-    return NextResponse.json({ ok: true });
-  }
-
-  const events = body.events ?? [];
-  // 検証リクエスト（events: []）は署名が無い／待ち時間が短いことがある
-  if (events.length === 0) {
-    return NextResponse.json({ ok: true });
-  }
-
   const signature = request.headers.get("x-line-signature");
+
   if (!verifyLineSignature(raw, signature)) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  const run = () =>
-    Promise.all(
-      events.map((event) =>
-        handleEvent(event).catch(async (err) => {
-          console.error("[line] event failed", err);
-          if (event.replyToken) {
-            await replyMessage(event.replyToken, [
-              textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
-            ]).catch(() => undefined);
-          }
-        }),
-      ),
-    );
+  const body = JSON.parse(raw) as { events: LineEvent[] };
 
-  // LINEは数秒以内の HTTP 200 を要求する。処理は応答後に続ける。
-  try {
-    after(() => run());
-  } catch {
-    void run();
-  }
+  // LINEは3秒以内の応答を期待するが、AI応答には時間がかかる。
+  // 個々のイベント処理の失敗が他を巻き込まないよう独立して処理する。
+  await Promise.all(
+    (body.events ?? []).map((event) =>
+      handleEvent(event).catch(async (err) => {
+        console.error("[line] event failed", err);
+        if (event.replyToken) {
+          await replyMessage(event.replyToken, [
+            textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
+          ]).catch(() => undefined);
+        }
+      }),
+    ),
+  );
 
   return NextResponse.json({ ok: true });
 }
