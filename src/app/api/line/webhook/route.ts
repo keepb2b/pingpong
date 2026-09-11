@@ -3,8 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   verifyLineSignature,
   replyMessage,
+  pushMessage,
   textMessage,
-  quickReply,
   getProfile,
   getMessageContent,
   proposalFlex,
@@ -12,10 +12,11 @@ import {
 import { secretaryInterview } from "@/lib/agents/secretary";
 import { approveContent } from "@/lib/agents/orchestrator";
 import { appUrl } from "@/lib/tracking";
-import { STATUS_LABEL, CHANNEL_LABEL } from "@/lib/constants";
+import { CHANNEL_LABEL } from "@/lib/constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 /** ブラウザで URL が生きているか確認する用。LINE 本体は POST のみ。 */
 export async function GET() {
@@ -29,6 +30,7 @@ export async function GET() {
 
 type LineEvent = {
   type: string;
+  mode?: string;
   replyToken?: string;
   source?: { userId?: string };
   message?: { id: string; type: string; text?: string; fileName?: string };
@@ -38,28 +40,39 @@ type LineEvent = {
 export async function POST(request: Request) {
   const raw = await request.text();
   const signature = request.headers.get("x-line-signature");
+  let body: { events?: LineEvent[] } = {};
+  try {
+    body = raw ? (JSON.parse(raw) as { events?: LineEvent[] }) : {};
+  } catch {
+    console.error("[line] webhook body is not JSON");
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
+
+  const events = body.events ?? [];
   console.log("[line] webhook POST", {
     hasSignature: Boolean(signature),
     bytes: raw.length,
+    eventCount: events.length,
+    types: events.map((e) => e.type),
+    postbacks: events
+      .filter((e) => e.type === "postback")
+      .map((e) => e.postback?.data ?? null),
   });
 
   if (!verifyLineSignature(raw, signature)) {
-    console.error("[line] invalid signature");
+    console.error("[line] invalid signature — check LINE_CHANNEL_SECRET matches Messaging API channel");
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  const body = JSON.parse(raw) as { events: LineEvent[] };
-
-  // LINEは3秒以内の応答を期待するが、AI応答には時間がかかる。
-  // 個々のイベント処理の失敗が他を巻き込まないよう独立して処理する。
   await Promise.all(
-    (body.events ?? []).map((event) =>
+    events.map((event) =>
       handleEvent(event).catch(async (err) => {
-        console.error("[line] event failed", err);
+        console.error("[line] event failed", event.type, err);
+        const fallback = [textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。")];
         if (event.replyToken) {
-          await replyMessage(event.replyToken, [
-            textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
-          ]).catch(() => undefined);
+          await replyMessage(event.replyToken, fallback).catch(() => undefined);
+        } else if (event.source?.userId) {
+          await pushMessage(event.source.userId, fallback).catch(() => undefined);
         }
       }),
     ),
@@ -69,6 +82,7 @@ export async function POST(request: Request) {
 }
 
 async function handleEvent(event: LineEvent) {
+  if (event.mode === "standby") return;
   const userId = event.source?.userId;
   if (!userId) return;
 
@@ -438,43 +452,86 @@ async function handleCommand(
 
 // ---------------------------------------------------------- ポストバック --
 async function handlePostback(event: LineEvent, userId: string) {
-  const replyToken = event.replyToken;
-  if (!replyToken || !event.postback) return;
+  const replyToken = event.replyToken ?? null;
+  if (!event.postback) return;
 
-  const params = new URLSearchParams(event.postback.data);
-  const action = params.get("action");
-  const id = params.get("id");
+  const parsed = parsePostbackPayload(event.postback.data);
+  const action = parsed.action;
+  const id = parsed.id;
+  console.log("[line] handlePostback", { data: event.postback.data, action, id });
+
   const account = await findAccount(userId);
 
   if (!account) {
-    await replyMessage(replyToken, [textMessage("先にLINE連携が必要です。")]);
+    await deliverLine({ replyToken, lineUserId: userId }, [textMessage("先にLINE連携が必要です。")]);
     return;
   }
 
   const subjectId = account.active_subject_id ?? (await primarySubject(account.org_id));
   if (action === "list_pending" && subjectId) {
-    await handleCommand("提案", account.org_id, subjectId, replyToken, account.user_id, userId);
+    await handleCommand("提案", account.org_id, subjectId, replyToken ?? "", account.user_id, userId);
     return;
   }
   if (action === "list_scheduled" && subjectId) {
-    await handleCommand("予定", account.org_id, subjectId, replyToken, account.user_id, userId);
+    await handleCommand("予定", account.org_id, subjectId, replyToken ?? "", account.user_id, userId);
     return;
   }
 
   if (!["approve", "revise", "hold", "reject"].includes(action ?? "")) {
-    await replyMessage(replyToken, [textMessage("不明な操作です。")]);
+    await deliverLine({ replyToken, lineUserId: userId }, [textMessage("不明な操作です。")]);
     return;
   }
+
+  await deliverLine({ replyToken, lineUserId: userId }, [textMessage("受け付けました。反映しています…")]);
 
   await applyLineContentAction({
     orgId: account.org_id,
     subjectId: subjectId ?? "",
     userId: account.user_id,
     lineUserId: userId,
-    replyToken,
+    replyToken: null,
     action: action as "approve" | "revise" | "hold" | "reject",
     contentId: id,
   });
+}
+
+function parsePostbackPayload(data: string | undefined): {
+  action: string | null;
+  id: string | null;
+} {
+  if (!data) return { action: null, id: null };
+  try {
+    const json = JSON.parse(data) as { action?: string; id?: string };
+    if (json && typeof json === "object" && (json.action || json.id)) {
+      return { action: json.action ?? null, id: json.id ?? null };
+    }
+  } catch {
+    // querystring or "approve:uuid"
+  }
+  const params = new URLSearchParams(data);
+  if (params.get("action")) {
+    return { action: params.get("action"), id: params.get("id") };
+  }
+  const compact = data.match(/^(approve|revise|hold|reject)[:|=]([0-9a-f-]{36})$/i);
+  if (compact) return { action: compact[1].toLowerCase(), id: compact[2] };
+  return { action: null, id: null };
+}
+
+async function deliverLine(
+  dest: { replyToken?: string | null; lineUserId?: string | null },
+  messages: ReturnType<typeof textMessage>[],
+) {
+  if (dest.replyToken) {
+    try {
+      await replyMessage(dest.replyToken, messages);
+      return;
+    } catch (err) {
+      console.error("[line] reply failed, falling back to push", err);
+    }
+  }
+  if (dest.lineUserId) {
+    await pushMessage(dest.lineUserId, messages);
+  }
 }
 
 function parseContentDecision(text: string): {
@@ -501,7 +558,7 @@ async function applyLineContentAction(params: {
   subjectId: string;
   userId: string | null;
   lineUserId?: string;
-  replyToken: string;
+  replyToken: string | null;
   action: "approve" | "revise" | "hold" | "reject";
   contentId: string | null;
 }) {
@@ -520,7 +577,10 @@ async function applyLineContentAction(params: {
     id = latest?.id ?? null;
   }
   if (!id) {
-    await replyMessage(params.replyToken, [textMessage("対象の広報案が見つかりませんでした。「提案」と送ると一覧を出せます。")]);
+    await deliverLine(
+      { replyToken: params.replyToken, lineUserId: params.lineUserId },
+      [textMessage("対象の広報案が見つかりませんでした。「提案」と送ると一覧を出せます。")],
+    );
     return;
   }
 
@@ -529,6 +589,7 @@ async function applyLineContentAction(params: {
     action: params.action,
     userId: params.userId,
     via: "line",
+    comment: "LINEのボタンから操作",
   });
 
   const messages: Record<string, string> = {
@@ -564,7 +625,10 @@ async function applyLineContentAction(params: {
     }
   }
 
-  await replyMessage(params.replyToken, [textMessage(messages[params.action])]);
+  await deliverLine(
+    { replyToken: params.replyToken, lineUserId: params.lineUserId },
+    [textMessage(messages[params.action])],
+  );
 }
 
 // ------------------------------------------------------------- ヘルパー ---
