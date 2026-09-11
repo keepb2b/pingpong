@@ -17,6 +17,16 @@ import { STATUS_LABEL, CHANNEL_LABEL } from "@/lib/constants";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** ブラウザで URL が生きているか確認する用。LINE 本体は POST のみ。 */
+export async function GET() {
+  console.log("[line] webhook GET (health check)");
+  return NextResponse.json({
+    ok: true,
+    webhook: "/api/line/webhook",
+    hint: "This URL is reachable. LINE buttons send POST here; they will not show in this GET.",
+  });
+}
+
 type LineEvent = {
   type: string;
   replyToken?: string;
@@ -28,8 +38,13 @@ type LineEvent = {
 export async function POST(request: Request) {
   const raw = await request.text();
   const signature = request.headers.get("x-line-signature");
+  console.log("[line] webhook POST", {
+    hasSignature: Boolean(signature),
+    bytes: raw.length,
+  });
 
   if (!verifyLineSignature(raw, signature)) {
+    console.error("[line] invalid signature");
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
@@ -128,7 +143,14 @@ async function handleMessage(event: LineEvent, userId: string) {
   // コマンド処理
   if (event.message.type === "text") {
     const text = (event.message.text ?? "").trim();
-    const handled = await handleCommand(text, account.org_id, subjectId, replyToken);
+    const handled = await handleCommand(
+      text,
+      account.org_id,
+      subjectId,
+      replyToken,
+      account.user_id,
+      userId,
+    );
     if (handled) return;
   }
 
@@ -240,8 +262,24 @@ async function handleCommand(
   orgId: string,
   subjectId: string,
   replyToken: string,
+  userId?: string | null,
+  lineUserId?: string,
 ): Promise<boolean> {
   const sb = supabaseAdmin();
+
+  const decision = parseContentDecision(text);
+  if (decision) {
+    await applyLineContentAction({
+      orgId,
+      subjectId,
+      userId: userId ?? null,
+      lineUserId,
+      replyToken,
+      action: decision.action,
+      contentId: decision.contentId,
+    });
+    return true;
+  }
 
   if (/^(ヘルプ|help|使い方)$/i.test(text)) {
     await replyMessage(replyToken, [
@@ -400,17 +438,26 @@ async function handleCommand(
 
 // ---------------------------------------------------------- ポストバック --
 async function handlePostback(event: LineEvent, userId: string) {
-  const sb = supabaseAdmin();
   const replyToken = event.replyToken;
   if (!replyToken || !event.postback) return;
 
   const params = new URLSearchParams(event.postback.data);
   const action = params.get("action");
   const id = params.get("id");
-
   const account = await findAccount(userId);
-  if (!account || !id) {
-    await replyMessage(replyToken, [textMessage("操作を受け付けられませんでした。")]);
+
+  if (!account) {
+    await replyMessage(replyToken, [textMessage("先にLINE連携が必要です。")]);
+    return;
+  }
+
+  const subjectId = account.active_subject_id ?? (await primarySubject(account.org_id));
+  if (action === "list_pending" && subjectId) {
+    await handleCommand("提案", account.org_id, subjectId, replyToken, account.user_id, userId);
+    return;
+  }
+  if (action === "list_scheduled" && subjectId) {
+    await handleCommand("予定", account.org_id, subjectId, replyToken, account.user_id, userId);
     return;
   }
 
@@ -419,10 +466,68 @@ async function handlePostback(event: LineEvent, userId: string) {
     return;
   }
 
+  await applyLineContentAction({
+    orgId: account.org_id,
+    subjectId: subjectId ?? "",
+    userId: account.user_id,
+    lineUserId: userId,
+    replyToken,
+    action: action as "approve" | "revise" | "hold" | "reject",
+    contentId: id,
+  });
+}
+
+function parseContentDecision(text: string): {
+  action: "approve" | "revise" | "hold" | "reject";
+  contentId: string | null;
+} | null {
+  const m = text.match(
+    /^(承認します|修正したいです|保留します|投稿しません|承認|修正|保留|投稿しない)\s*[:：]\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+  );
+  const m2 =
+    m ??
+    text.match(
+      /^(承認します|修正したいです|保留します|投稿しません)\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$/i,
+    );
+  if (!m2) return null;
+  const label = m2[1];
+  const action: "approve" | "revise" | "hold" | "reject" =
+    /修正/.test(label) ? "revise" : /保留/.test(label) ? "hold" : /投稿しない|投稿しません/.test(label) ? "reject" : "approve";
+  return { action, contentId: m2[2] ?? null };
+}
+
+async function applyLineContentAction(params: {
+  orgId: string;
+  subjectId: string;
+  userId: string | null;
+  lineUserId?: string;
+  replyToken: string;
+  action: "approve" | "revise" | "hold" | "reject";
+  contentId: string | null;
+}) {
+  const sb = supabaseAdmin();
+  let id = params.contentId;
+  if (!id && params.subjectId) {
+    const { data: latest } = await sb
+      .from("content_items")
+      .select("id")
+      .eq("org_id", params.orgId)
+      .eq("subject_id", params.subjectId)
+      .eq("status", "pending_approval")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    id = latest?.id ?? null;
+  }
+  if (!id) {
+    await replyMessage(params.replyToken, [textMessage("対象の広報案が見つかりませんでした。「提案」と送ると一覧を出せます。")]);
+    return;
+  }
+
   const result = await approveContent({
     contentId: id,
-    action: action as "approve" | "revise" | "hold" | "reject",
-    userId: account.user_id,
+    action: params.action,
+    userId: params.userId,
     via: "line",
   });
 
@@ -433,20 +538,15 @@ async function handlePostback(event: LineEvent, userId: string) {
     reject: "投稿しない設定にしました。今後の提案に反映します。",
   };
 
-  if (action === "revise") {
-    // 修正指示を受けるため会話を開いておく
-    const subjectId = account.active_subject_id ?? (await primarySubject(account.org_id));
-    if (subjectId) {
-      const conv = await getOrCreateConversation(account.org_id, subjectId, userId);
-      await sb
-        .from("conversations")
-        .update({ topic: `revise:${id}`, status: "open" })
-        .eq("id", conv.id);
-    }
+  if (params.action === "revise" && params.subjectId && params.lineUserId) {
+    const conv = await getOrCreateConversation(params.orgId, params.subjectId, params.lineUserId);
+    await sb
+      .from("conversations")
+      .update({ topic: `revise:${id}`, status: "open" })
+      .eq("id", conv.id);
   }
 
-  // 却下・保留の理由は学習材料になる
-  if (action === "reject" || action === "hold") {
+  if (params.action === "reject" || params.action === "hold") {
     const { data: content } = await sb
       .from("content_items")
       .select("subject_id, title, type")
@@ -454,22 +554,17 @@ async function handlePostback(event: LineEvent, userId: string) {
       .maybeSingle();
     if (content) {
       await sb.from("learnings").insert({
-        org_id: account.org_id,
+        org_id: params.orgId,
         subject_id: content.subject_id,
         category: "rule",
-        statement: `「${content.title}」(${content.type})は${action === "reject" ? "投稿しない" : "保留"}と判断された`,
+        statement: `「${content.title}」(${content.type})は${params.action === "reject" ? "投稿しない" : "保留"}と判断された`,
         evidence: "LINEでのユーザー操作",
         status: "pending",
       });
     }
   }
 
-  await replyMessage(replyToken, [
-    quickReply(messages[action!], [
-      { label: "承認待ちを見る", data: "action=list_pending" },
-      { label: "投稿予定を見る", data: "action=list_scheduled" },
-    ]),
-  ]);
+  await replyMessage(params.replyToken, [textMessage(messages[params.action])]);
 }
 
 // ------------------------------------------------------------- ヘルパー ---
