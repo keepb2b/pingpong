@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EyeIcon, EyeOffIcon, CameraIcon, UserIcon } from "@/components/icons/NavIcons";
 import type { BadgeTone } from "@/lib/badge-tone";
+import { humanizeError, readJsonSafe } from "@/lib/user-error";
 
 export type { BadgeTone } from "@/lib/badge-tone";
 export { riskTone, statusTone } from "@/lib/badge-tone";
@@ -631,14 +632,19 @@ export async function callApi<T = unknown>(
       headers: isForm ? undefined : { "Content-Type": "application/json" },
       body: isForm ? body : JSON.stringify(body),
     });
-    const json = await res.json();
+    const parsed = await readJsonSafe<{ ok?: boolean; error?: string; data?: T }>(res);
+    if (!parsed.ok) {
+      toast(parsed.error, "err");
+      return null;
+    }
+    const json = parsed.data;
     if (!res.ok || !json.ok) {
-      toast(json.error ?? "処理に失敗しました", "err");
+      toast(humanizeError(json.error ?? "処理に失敗しました"), "err");
       return null;
     }
     return json.data as T;
   } catch (err) {
-    toast(err instanceof Error ? err.message : "通信に失敗しました", "err");
+    toast(humanizeError(err), "err");
     return null;
   }
 }

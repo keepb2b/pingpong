@@ -1,6 +1,6 @@
 import { handle, requireOrg, requireSubject, requireRole, ApiError } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { runDailyCycle, produceFromProposal, runMonthlyReview, currentPeriod, coerceContentType } from "@/lib/agents/orchestrator";
+import { runDailyCycle, produceFromProposal, runMonthlyReview, currentPeriod, coerceContentType, notify } from "@/lib/agents/orchestrator";
 import { buildStrategy, decideToday, recommendCadence } from "@/lib/agents/strategist";
 import { writeContent } from "@/lib/agents/writer";
 import { adaptToChannels, designFunnel, draftReply } from "@/lib/agents/marketer";
@@ -8,8 +8,12 @@ import { factCheck, crisisResponse } from "@/lib/agents/analyst";
 import { generateCreative, generateCarousel } from "@/lib/agents/creator";
 import { secretaryDailyPrompt } from "@/lib/agents/secretary";
 import type { ChannelKey, ContentTypeKey } from "@/lib/constants";
+import { after } from "next/server";
+import { humanizeError } from "@/lib/user-error";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 /**
  * 6人の専門AIを手動で起動するエンドポイント。
@@ -36,7 +40,30 @@ export async function POST(request: Request) {
       // ------------------------------------------------------ 日次循環 ----
       case "daily_cycle": {
         requireRole(ctx, "editor");
-        return runDailyCycle(subjectId);
+        const run = async () => {
+          try {
+            await runDailyCycle(subjectId);
+          } catch (err) {
+            console.error("[daily_cycle]", err);
+            await notify({
+              orgId: ctx.orgId,
+              subjectId,
+              kind: "error",
+              agent: "strategist",
+              title: "今日の広報活動を完了できませんでした",
+              body: humanizeError(err),
+            });
+          }
+        };
+        try {
+          after(() => run());
+        } catch {
+          void run();
+        }
+        return {
+          started: true,
+          message: "本日の広報活動を開始しました。完了するとお知らせに表示されます。",
+        };
       }
 
       case "decide_today": {

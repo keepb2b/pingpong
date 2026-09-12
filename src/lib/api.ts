@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrgContext, type OrgContext } from "@/lib/supabase/server";
+import { humanizeError } from "@/lib/user-error";
 
 export class ApiError extends Error {
   constructor(
@@ -67,8 +68,8 @@ export async function handle<T>(fn: () => Promise<T>): Promise<NextResponse> {
     if (err instanceof ApiError) {
       return NextResponse.json({ ok: false, error: err.message }, { status: err.status });
     }
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[api]", message);
+    const message = humanizeError(err);
+    console.error("[api]", err instanceof Error ? err.message : err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

@@ -206,7 +206,15 @@ export async function callModel<T = unknown>(
 
       if (!res.ok) {
         const text = await res.text();
-        // 4xx other than rate limiting will not get better on retry
+        if (
+          opts.json &&
+          body.response_format &&
+          /response_format|json_object|json_schema/i.test(text)
+        ) {
+          delete body.response_format;
+          lastError = describeHttpError(provider, res.status, text);
+          continue;
+        }
         if (res.status !== 429 && res.status < 500) {
           throw describeHttpError(provider, res.status, text);
         }
@@ -215,7 +223,17 @@ export async function callModel<T = unknown>(
         continue;
       }
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: {
+        choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
+        model?: string;
+      };
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`${provider} returned a non-JSON response (HTTP ${res.status})`);
+      }
       const choice = data?.choices?.[0];
       const content: string = choice?.message?.content ?? "";
       const usage = data?.usage ?? {};
@@ -310,19 +328,23 @@ export async function runAgent<T = unknown>(
     }
 
     const parsed = input.json ? res.parsed : (res.content as unknown as T);
+    const usable =
+      input.json && (parsed == null || typeof parsed !== "object")
+        ? ((input.fallback?.() ?? null) as T | null)
+        : parsed;
 
     runId = await logRun({
       ...input,
       model: res.model,
       ok: true,
-      output: parsed,
+      output: usable,
       durationMs: res.durationMs,
       promptTokens: res.promptTokens,
       completionTokens: res.completionTokens,
       costUsd: res.costUsd,
     });
 
-    return { result: parsed, text: res.content, simulated: false, runId };
+    return { result: usable, text: res.content, simulated: false, runId };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     runId = await logRun({
