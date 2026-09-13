@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -179,7 +179,7 @@ export function UserTable({ rows }: { rows: AdminUserRow[] }) {
         {loading && <div className="h-40 skeleton rounded-lg" />}
 
         {!loading && detail && selected && (
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-6">
             <div className="flex items-start gap-4">
               <Avatar src={selected.avatar_url} name={selected.display_name ?? selected.email} size={64} />
               <div className="min-w-0">

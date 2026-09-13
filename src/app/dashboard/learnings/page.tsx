@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -49,7 +49,7 @@ export default async function LearningsPage() {
         agent="secretary"
       />
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-6">
         <Card>
           <CardHeader
             title="確認をお願いします"

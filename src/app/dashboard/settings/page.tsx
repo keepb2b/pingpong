@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge } from "@/components/ui";
 import { PageHeader, AgentButton } from "@/components/dashboard/shared";
@@ -55,12 +55,12 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="設定・連携"
+        title="設定"
         description="対話頻度、投稿頻度、媒体連携、広報対象、権限を設定します。すべていつでも変更できます。"
       />
 
-      <div className="grid lg:grid-cols-2 gap-5">
-        <div className="space-y-5">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="space-y-4 sm:space-y-6">
           <div id="line" className="scroll-mt-20">
             <Card>
               <CardHeader
@@ -120,7 +120,7 @@ export default async function SettingsPage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="媒体と投稿頻度"

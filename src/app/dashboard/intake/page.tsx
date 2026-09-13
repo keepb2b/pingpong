@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -59,8 +59,8 @@ export default async function IntakePage() {
         action={<AddIntake subjectId={subjectId} />}
       />
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="未使用の広報材料"
@@ -142,7 +142,7 @@ export default async function IntakePage() {
           )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="AI取材の進行状況"

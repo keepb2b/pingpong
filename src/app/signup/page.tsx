@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -78,24 +78,24 @@ export default function SignupPage() {
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ヘッダー */}
       <header className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-5xl px-5 h-16 flex items-center justify-between">
+        <div className="mx-auto max-w-5xl px-4 sm:px-5 h-16 flex items-center justify-between gap-3">
           <Link href="/">
             <Logo size={30} />
           </Link>
-          <Link href="/login" className="text-[13px] text-[var(--link)] hover:underline">
-            すでにご登録の方はこちら
+          <Link href="/login" className="text-[12px] sm:text-[13px] text-[var(--link)] hover:underline shrink-0">
+            ログイン
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-5 py-8">
+      <div className="mx-auto max-w-3xl px-4 sm:px-5 py-6 sm:py-8">
         <nav className="breadcrumb mb-3" aria-label="パンくず">
           <Link href="/">ホーム</Link>
           <span className="mx-1.5 opacity-60">›</span>
           <span className="text-[var(--text)]">新規登録</span>
         </nav>
 
-        <h1 className="text-[22px] font-semibold tracking-tight mb-6">新規登録</h1>
+        <h1 className="text-[22px] sm:text-[26px] font-semibold tracking-tight mb-6">新規登録</h1>
 
         {/* 手順表示 — 日本のサイトでよく使われるステップ表示 */}
         <ol className="flex mb-6 border border-[var(--border)] rounded-xl overflow-hidden bg-[var(--surface)]">
@@ -105,8 +105,8 @@ export default function SignupPage() {
               className={`flex-1 text-center py-2.5 text-[12px] font-semibold border-r border-[var(--border)] last:border-r-0
                 ${i === 0 ? "bg-brand-700 text-white" : "muted"}`}
             >
-              <span className="tabular-nums mr-1.5">STEP {i + 1}</span>
-              {label}
+              <span className="tabular-nums sm:mr-1.5">STEP {i + 1}</span>
+              <span className="hidden sm:inline">{label}</span>
             </li>
           ))}
         </ol>
@@ -121,7 +121,7 @@ export default function SignupPage() {
           {/* --------------------------------------------------- ご担当者 -- */}
           <h2 className="text-[15px] font-semibold mb-4">ご担当者さまの情報</h2>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-6">
             <div>
               <span className="flex items-center gap-1.5 text-[13px] font-semibold mb-2">
                 プロフィール画像
@@ -193,7 +193,7 @@ export default function SignupPage() {
           {/* ----------------------------------------------------- 広報対象 */}
           <h2 className="text-[15px] font-semibold mt-8 mb-4">広報対象の情報</h2>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-6">
             <Field label="会社名・組織名" required>
               <Input
                 value={form.orgName}

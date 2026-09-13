@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+﻿import { supabaseAdmin } from "@/lib/supabase/admin";
 import { listAllUsers, summarizeUsers } from "@/lib/admin";
 import { Card, CardHeader, StatTile, Badge } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -92,7 +92,7 @@ export default async function AdminActivityPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader title="AI実行回数の推移" subtitle="直近30日間の日別。" />
           <TrendChart
@@ -123,7 +123,7 @@ export default async function AdminActivityPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader title="使用モデルの内訳" subtitle="コスト管理の参考にしてください。" />
           <ChannelBars

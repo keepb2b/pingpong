@@ -100,7 +100,7 @@ export function LearningRow({
             <Input
               value={correction}
               onChange={(e) => setCorrection(e.target.value)}
-              className="flex-1 min-w-[16rem]"
+              className="flex-1 min-w-0 w-full sm:min-w-[16rem]"
               placeholder="正しい内容に書き換えてください"
             />
             <Button size="sm" onClick={() => decide("correct_to", correction)}>

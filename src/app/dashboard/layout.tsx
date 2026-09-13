@@ -8,6 +8,7 @@ import { SubjectSwitcher } from "@/components/dashboard/SubjectSwitcher";
 import { AccountMenu } from "@/components/dashboard/AccountMenu";
 import { RefreshOnFocus } from "@/components/dashboard/RefreshOnFocus";
 import { HeaderSearch } from "@/components/dashboard/HeaderSearch";
+import { HeaderMeta } from "@/components/dashboard/HeaderMeta";
 
 export const dynamic = "force-dynamic";
 
@@ -92,43 +93,49 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-3 sm:px-6 bg-[var(--surface)] border-b border-[var(--border)]">
-          <div className="lg:hidden">
-            <MobileNav
-              pending={pendingCount ?? 0}
-              mentions={mentionCount ?? 0}
-              isPlatformAdmin={isPlatformAdmin}
-            />
-          </div>
-          <Link href="/dashboard" className="lg:hidden flex items-center gap-2">
-            <LogoMark size={22} />
-            <span className="font-semibold text-[14px]">AI広報部</span>
-          </Link>
+        <header className="sticky top-0 z-30 bg-[var(--surface)] border-b border-[var(--border)]">
+          <div className="h-14 flex items-center gap-2 sm:gap-3 px-3 sm:px-6">
+            <div className="lg:hidden shrink-0">
+              <MobileNav
+                pending={pendingCount ?? 0}
+                mentions={mentionCount ?? 0}
+                isPlatformAdmin={isPlatformAdmin}
+              />
+            </div>
+            <Link href="/dashboard" className="lg:hidden flex items-center gap-2 min-w-0">
+              <LogoMark size={22} />
+              <span className="font-semibold text-[14px] truncate">AI広報部</span>
+            </Link>
 
-          <div className="hidden sm:block flex-1 min-w-0">
+            <div className="hidden sm:block flex-1 min-w-0">
+              <HeaderSearch />
+            </div>
+
+            <div className="ml-auto flex items-center gap-1 sm:gap-2 min-w-0 shrink-0">
+              <NotificationBell notifications={notifications ?? []} />
+              <AccountMenu
+                profile={{
+                  id: ctx.userId,
+                  displayName: profile?.display_name ?? null,
+                  email: profile?.email ?? null,
+                  avatarUrl: profile?.avatar_url ?? null,
+                  companyName: profile?.company_name ?? null,
+                  jobTitle: profile?.job_title ?? null,
+                  department: profile?.department ?? null,
+                  orgName: org?.name ?? ctx.orgName,
+                  orgRole: ctx.role,
+                  isPlatformAdmin,
+                }}
+              />
+              <HeaderMeta />
+            </div>
+          </div>
+          <div className="sm:hidden px-3 pb-3">
             <HeaderSearch />
-          </div>
-
-          <div className="ml-auto flex items-center gap-1">
-            <NotificationBell notifications={notifications ?? []} />
-            <AccountMenu
-              profile={{
-                id: ctx.userId,
-                displayName: profile?.display_name ?? null,
-                email: profile?.email ?? null,
-                avatarUrl: profile?.avatar_url ?? null,
-                companyName: profile?.company_name ?? null,
-                jobTitle: profile?.job_title ?? null,
-                department: profile?.department ?? null,
-                orgName: org?.name ?? ctx.orgName,
-                orgRole: ctx.role,
-                isPlatformAdmin,
-              }}
-            />
           </div>
         </header>
 
-        <main className="flex-1 p-5 sm:p-8 w-full max-w-[1280px]">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1280px]">{children}</main>
       </div>
     </div>
   );

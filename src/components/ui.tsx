@@ -132,7 +132,7 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 mb-5">
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-4 sm:mb-5">
       <div className="flex items-start gap-2.5 min-w-0">
         {icon && (
           <span className="shrink-0 mt-0.5 h-8 w-8 rounded-lg bg-brand-50 text-brand-700 grid place-items-center">
@@ -144,7 +144,7 @@ export function CardHeader({
           {subtitle && <p className="muted text-[13px] mt-1 leading-relaxed">{subtitle}</p>}
         </div>
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="shrink-0 sm:pt-0.5">{action}</div>}
     </div>
   );
 }
@@ -197,57 +197,66 @@ export function StatTile({
   icon?: ReactNode;
   spark?: number[];
 }) {
+  const color = accent ?? "var(--color-brand-600)";
+  const series = spark && spark.length > 1 && spark.some((n) => n > 0) ? spark : null;
+
   return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="muted text-[13px] font-medium leading-tight">{label}</p>
-          <p className="mt-2 text-[26px] font-semibold tabular-nums tracking-tight leading-none text-ink-900">
-            {value}
-            {unit && <span className="text-[13px] font-medium muted ml-1">{unit}</span>}
-          </p>
-        </div>
+    <div className="card p-4 sm:p-5 relative overflow-hidden min-h-[108px] sm:min-h-[120px]">
+      <div className={`flex items-start gap-3 ${series ? "pr-[4.5rem] sm:pr-[5.5rem]" : ""}`}>
         {icon && (
           <span
-            className="h-9 w-9 rounded-lg grid place-items-center shrink-0 bg-brand-50 text-brand-700"
-            style={accent ? { background: `${accent}14`, color: accent } : undefined}
+            className="h-10 w-10 sm:h-11 sm:w-11 rounded-full grid place-items-center shrink-0"
+            style={{ background: `color-mix(in srgb, ${color} 14%, white)`, color }}
           >
             {icon}
           </span>
         )}
-      </div>
-      {spark && spark.length > 1 && (
-        <MiniSpark points={spark} color={accent ?? "var(--color-brand-500)"} />
-      )}
-      <div className="mt-3 flex items-center gap-2 min-h-[16px]">
-        {typeof delta === "number" && Number.isFinite(delta) && (
-          <span
-            className={`text-[12px] font-semibold tabular-nums ${delta >= 0 ? "text-[#1d7a4a]" : "text-[#c8102e]"}`}
+        <div className="min-w-0 flex-1">
+          <p className="muted text-[12px] sm:text-[13px] font-medium leading-tight">{label}</p>
+          <p
+            className="mt-1.5 text-[20px] sm:text-[26px] font-bold tabular-nums tracking-tight leading-none"
+            style={{ color }}
           >
-            {delta >= 0 ? "前月比 +" : "前月比 "}
-            {delta}%
-          </span>
-        )}
-        {hint && <span className="muted text-[12px] leading-tight">{hint}</span>}
+            {value}
+            {unit && <span className="text-[13px] font-medium muted ml-1">{unit}</span>}
+          </p>
+          <div className="mt-2 sm:mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 min-h-[16px]">
+            {typeof delta === "number" && Number.isFinite(delta) && (
+              <span
+                className={`text-[12px] font-semibold tabular-nums ${delta >= 0 ? "text-[#1d7a4a]" : "text-[#c8102e]"}`}
+              >
+                {delta >= 0 ? "前月比 +" : "前月比 "}
+                {delta}%
+              </span>
+            )}
+            {hint && <span className="muted text-[12px] leading-tight">{hint}</span>}
+          </div>
+        </div>
       </div>
+      {series && (
+        <div className="absolute right-2 sm:right-3 top-4 sm:top-5 pointer-events-none scale-75 sm:scale-100 origin-top-right" aria-hidden>
+          <MiniSpark points={series} color={color} />
+        </div>
+      )}
     </div>
   );
 }
 
 function MiniSpark({ points, color }: { points: number[]; color: string }) {
   const max = Math.max(...points, 1);
-  const w = 88;
-  const h = 28;
-  const d = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * w;
-      const y = h - (p / max) * (h - 4) - 2;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const w = 108;
+  const h = 40;
+  const coords = points.map((p, i) => {
+    const x = (i / (points.length - 1)) * w;
+    const y = h - (p / max) * (h - 8) - 4;
+    return [x, y] as const;
+  });
+  const line = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const area = `${line} L ${w} ${h} L 0 ${h} Z`;
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="mt-3 block" aria-hidden>
-      <path d={d} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <path d={area} fill={color} opacity="0.12" />
+      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -604,14 +613,16 @@ export function EmptyState({
   title,
   body,
   action,
+  className = "",
 }: {
   icon?: ReactNode;
   title: string;
   body?: string;
   action?: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="text-center py-12 px-6 rounded-xl bg-[var(--surface-2)]">
+    <div className={`text-center py-10 px-4 sm:px-6 rounded-xl ${className || "bg-[var(--surface-2)]"}`}>
       {icon && <div className="mx-auto mb-2.5 muted w-fit">{icon}</div>}
       <p className="font-semibold text-[13px]">{title}</p>
       {body && <p className="muted text-[12px] mt-1.5 max-w-md mx-auto leading-relaxed">{body}</p>}

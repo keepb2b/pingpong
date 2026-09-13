@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,7 +47,7 @@ export function FactTable({ subjectId, facts }: { subjectId: string; facts: Fact
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-6">
         {Object.entries(grouped).map(([category, list]) => (
           <div key={category}>
             <p className="text-xs font-semibold mb-2">{category}</p>

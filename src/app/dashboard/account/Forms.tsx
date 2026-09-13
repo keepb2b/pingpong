@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -70,7 +70,7 @@ export function AccountForm({ initial }: { userId?: string; initial: Profile }) 
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-6">
       <div>
         <span className="text-[13px] font-semibold block mb-2">プロフィール画像</span>
         <AvatarPicker
@@ -172,7 +172,7 @@ export function PasswordForm() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-6">
       <Field label="現在のパスワード" required>
         <PasswordInput value={current} onChange={setCurrent} autoComplete="current-password" />
       </Field>

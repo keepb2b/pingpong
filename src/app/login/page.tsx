@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
@@ -34,7 +34,7 @@ function LoginForm() {
 
   return (
     <form
-      className="space-y-5"
+      className="space-y-4 sm:space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
         void signIn();
@@ -70,15 +70,15 @@ export default function LoginPage() {
   return (
     <main className="min-h-dvh bg-[var(--surface-2)]">
       <header className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-5xl px-5 h-16 flex items-center">
+        <div className="mx-auto max-w-5xl px-4 sm:px-5 h-16 flex items-center">
           <Link href="/">
             <Logo size={30} />
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-md px-5 py-12">
-        <h1 className="text-[22px] font-semibold tracking-tight mb-6">ログイン</h1>
+      <div className="mx-auto max-w-md px-4 sm:px-5 py-8 sm:py-12">
+        <h1 className="text-[22px] sm:text-[26px] font-semibold tracking-tight mb-6">ログイン</h1>
 
         <div className="card p-6">
           <Suspense fallback={<div className="h-56 skeleton rounded-lg" />}>

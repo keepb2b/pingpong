@@ -10,7 +10,7 @@ export function HeaderSearch() {
 
   return (
     <form
-      className="relative flex-1 max-w-xl"
+      className="relative w-full max-w-xl"
       onSubmit={(e) => {
         e.preventDefault();
         const next = q.trim();
@@ -27,7 +27,7 @@ export function HeaderSearch() {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="キーワードで検索（投稿・分析・資料など）"
+        placeholder="キーワードで検索"
         className="field-input h-10 pl-9 pr-3 text-[13px] bg-[var(--surface-2)] border-[var(--border)]"
         aria-label="コンテンツを検索"
       />

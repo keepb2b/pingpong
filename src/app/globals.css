@@ -175,6 +175,7 @@ a { color: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+  min-width: 0;
 }
 
 @utility muted {
@@ -230,6 +231,16 @@ a { color: inherit; }
   white-space: nowrap;
   width: 11rem;
   color: var(--text);
+}
+@media (max-width: 639px) {
+  .spec-table th {
+    width: 6.5rem;
+    white-space: normal;
+    padding: 8px 10px;
+  }
+  .spec-table td {
+    padding: 8px 10px;
+  }
 }
 
 /* データ表 */

@@ -22,8 +22,8 @@ export function ProposalActions({
 
   if (decided) {
     return (
-      <Link href={`/dashboard/content/${contentId}`} className="inline-block mt-3 text-[12px] text-brand-700 font-medium hover:underline">
-        詳細を見る
+      <Link href={`/dashboard/content/${contentId}`} className="inline-block mt-3 text-[12px] text-brand-600 font-semibold hover:underline">
+        続きを読む
       </Link>
     );
   }
@@ -42,7 +42,7 @@ export function ProposalActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2 mt-4">
+    <div className={`flex flex-wrap items-center gap-2 mt-4 w-full`}>
       <Button size="sm" onClick={() => act("approve")}>
         承認
       </Button>
@@ -54,9 +54,9 @@ export function ProposalActions({
       </Button>
       <Link
         href={`/dashboard/content/${contentId}`}
-        className="inline-flex items-center text-[12px] text-brand-700 font-medium hover:underline px-1"
+        className="inline-flex items-center ml-auto text-[12px] text-brand-600 font-semibold hover:underline"
       >
-        詳細
+        続きを読む
       </Link>
     </div>
   );

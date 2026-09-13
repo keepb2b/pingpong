@@ -1,4 +1,4 @@
-import { getPaymentSummary } from "@/lib/admin";
+﻿import { getPaymentSummary } from "@/lib/admin";
 import { isStripeConfigured } from "@/lib/stripe";
 import { Card, CardHeader, StatTile } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -47,7 +47,7 @@ export default async function AdminPaymentsPage() {
         <StatTile label="決済件数" value={summary.count} unit="件" accent="#0f6e8c" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader title="月次売上の推移" subtitle="直近12か月。成功した決済のみを集計しています。" />
           <TrendChart series={[{ name: "売上", points: summary.byMonth }]} unit="円" />

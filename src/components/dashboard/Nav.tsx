@@ -55,7 +55,7 @@ const GROUPS: Array<{ title: string; items: NavItem[] }> = [
     ],
   },
   {
-    title: "信頼・リスク",
+    title: "リスク・市場",
     items: [
       { href: "/dashboard/mentions", label: "コメント・口コミ", icon: <MessageSquare {...ICON} />, badge: "mentions" },
       { href: "/dashboard/monitoring", label: "競合・市場監視", icon: <Radar {...ICON} /> },
@@ -64,7 +64,7 @@ const GROUPS: Array<{ title: string; items: NavItem[] }> = [
     ],
   },
   {
-    title: "AIの理解",
+    title: "その他",
     items: [
       { href: "/dashboard/karte", label: "AI広報カルテ", icon: <BookOpen {...ICON} /> },
       { href: "/dashboard/facts", label: "公式事実データベース", icon: <Shield {...ICON} /> },
@@ -74,7 +74,7 @@ const GROUPS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: "設定",
     items: [
-      { href: "/dashboard/settings", label: "設定・連携", icon: <Settings {...ICON} /> },
+      { href: "/dashboard/settings", label: "設定", icon: <Settings {...ICON} /> },
       { href: "/dashboard/billing", label: "ご契約・料金", icon: <CreditCard {...ICON} /> },
     ],
   },
