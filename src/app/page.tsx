@@ -1,6 +1,5 @@
-import { PublicShell } from "@/components/dashboard/PublicShell";
-import { DashboardBrand } from "@/components/dashboard/Brand";
 ﻿import Link from "next/link";
+import { DashboardBrand } from "@/components/dashboard/Brand";
 import { PRICING, SETUP_INCLUDES, yen, GOALS, RISK_CHECKPOINTS } from "@/lib/constants";
 import { LineIcon, LoopIcon, ShieldCheckIcon } from "@/components/icons/AgentIcons";
 import { SecretaryChatDemo } from "@/components/SecretaryChatDemo";
@@ -40,11 +39,10 @@ const FEATURES = [
 
 export default function LandingPage() {
   return (
-    <PublicShell>
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ------------------------------------------------------------ nav -- */}
       <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-40">
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
           <DashboardBrand />
 
           <nav className="flex items-center gap-1 text-[13px] shrink-0">
@@ -72,7 +70,7 @@ export default function LandingPage() {
 
       {/* ----------------------------------------------------------- hero -- */}
       <section className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-12 sm:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-12 sm:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
           <div>
             <p className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-[12px] font-bold px-2.5 py-1 rounded-md">
               <LineIcon size={14} />
@@ -141,7 +139,7 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------- problems -- */}
-      <section id="problems" className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
+      <section id="problems" className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-14">
         <ProblemsDiagram />
       </section>
 
@@ -151,7 +149,7 @@ export default function LandingPage() {
       </section>
 
       {/* ----------------------------------------------------------- cycle - */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
+      <section className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-14">
         <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2 flex items-center gap-2">
           <span className="text-brand-600">
             <LoopIcon size={20} />
@@ -177,7 +175,7 @@ export default function LandingPage() {
 
       {/* --------------------------------------------------------- funnel -- */}
       <section className="bg-[var(--surface)] border-y border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-14">
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">広報目的から逆算した戦略設計</h2>
           <p className="muted text-[13px] mb-6 leading-[1.9]">
             AI広報は、投稿数を増やすこと自体を目的にしません。最初に企業が達成したい目的を設定し、
@@ -200,7 +198,7 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------- features -- */}
-      <section id="features" className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
+      <section id="features" className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-14">
         <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-6">主な機能</h2>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -238,7 +236,7 @@ export default function LandingPage() {
 
       {/* -------------------------------------------------------- pricing -- */}
       <section id="pricing" className="bg-[var(--surface)] border-t border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-14">
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">料金</h2>
           <p className="muted text-[13px] mb-6">
             料金プランは一つだけです。対話頻度、投稿頻度、使用媒体は自由に設定できます。
@@ -354,7 +352,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="bg-ink-900 text-white/70">
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 py-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <DashboardBrand />
             <span className="text-[11.5px] font-medium">成果を出すAI広報部</span>
@@ -370,6 +368,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </main>
-    </PublicShell>
   );
 }

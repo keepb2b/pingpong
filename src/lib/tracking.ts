@@ -11,7 +11,10 @@ export function shortCode(len = 7): string {
 }
 
 export function appUrl(path = ""): string {
-  const base = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  let base = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  if (base.includes("pingpong-ai.netlify.app")) {
+    base = "https://ai-promotion-service.netlify.app";
+  }
   return `${base}${path}`;
 }
 
