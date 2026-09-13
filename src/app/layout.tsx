@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
 import { ToastHost } from "@/components/ui";
 import "./globals.css";
+import "./dashboard/dashboard.css";
 
 const notoSans = Noto_Sans_JP({
   subsets: ["latin"],
@@ -46,7 +47,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" className={`${notoSans.variable} ${notoSerif.variable}`} suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className="dashboard-theme font-sans antialiased">
         {children}
         <ToastHost />
       </body>

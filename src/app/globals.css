@@ -165,7 +165,9 @@ select,
   font-family: inherit;
 }
 
-a { color: inherit; }
+@layer base {
+  a { color: inherit; }
+}
 
 /* ==========================================================================
    共通パーツ

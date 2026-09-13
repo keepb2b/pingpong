@@ -130,6 +130,7 @@ function NavLinks({
                   <Link
                     href={item.href}
                     onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-2.5 mx-2 px-2.5 py-2 rounded-lg text-[13px] transition-colors
                       ${
                         dark

@@ -20,7 +20,7 @@ export function PageHeader({
   const meta = agent ? AGENTS.find((a) => a.key === agent) : null;
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+    <div className="page-header flex flex-wrap items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
       <div className="flex items-start gap-3 min-w-0">
         {meta && (
           <span className="h-10 w-10 rounded-lg bg-brand-50 text-brand-700 grid place-items-center shrink-0">

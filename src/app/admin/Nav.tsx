@@ -16,13 +16,14 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 px-2 pb-2 overflow-x-auto scroll-thin">
+    <nav className="admin-navigation flex gap-1 px-2 pb-2 overflow-x-auto scroll-thin">
       {TABS.map((t) => {
         const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
         return (
           <Link
             key={t.href}
             href={t.href}
+            aria-current={active ? "page" : undefined}
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors
               ${active ? "bg-[var(--sidebar-active)] text-white" : "text-[var(--sidebar-text)] hover:bg-white/10 hover:text-white"}`}
           >

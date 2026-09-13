@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, FileText, Link2, Database, Bell, Send, ChartNoAxesCombined, MessageSquare, Target, Megaphone } from "lucide-react";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile, EmptyState } from "@/components/ui";
 import { statusTone, riskTone } from "@/lib/badge-tone";
 import { PageHeader, AgentButton } from "@/components/dashboard/shared";
+import { HeaderMeta } from "@/components/dashboard/HeaderMeta";
 import { ProposalActions } from "@/components/dashboard/ProposalActions";
 import { formatDateTime } from "@/lib/format-date";
 import { ScoreRing } from "@/components/charts";
@@ -132,17 +133,32 @@ export default async function DashboardHome() {
 
   const contentIds = (proposalContents ?? []).map((c) => c.id);
   const { data: creatives } = contentIds.length
-    ? await sb.from("creatives").select("content_id, url").in("content_id", contentIds)
-    : { data: [] as Array<{ content_id: string; url: string | null }> };
-  const imageByContent = new Map(
-    (creatives ?? []).filter((c) => c.url).map((c) => [c.content_id, c.url as string]),
-  );
-  const imageByProposal = new Map(
-    (proposalContents ?? []).flatMap((c) => {
-      const url = imageByContent.get(c.id);
-      return url ? [[c.proposal_id, url] as const] : [];
-    }),
-  );
+    ? await sb
+        .from("creatives")
+        .select("content_id, url, svg, kind")
+        .in("content_id", contentIds)
+    : { data: [] as Array<{ content_id: string; url: string | null; svg: string | null; kind: string }> };
+
+  type CreativePreview = { url?: string; svg?: string };
+  const imageByContent = new Map<string, CreativePreview>();
+  for (const c of creatives ?? []) {
+    if (!c.content_id || (!c.url && !c.svg)) continue;
+    const preferred = c.kind === "sns_image" || c.kind === "eyecatch" || c.kind?.startsWith("carousel");
+    const current = imageByContent.get(c.content_id);
+    if (!current || preferred) {
+      imageByContent.set(c.content_id, {
+        url: c.url ?? undefined,
+        svg: c.svg ?? undefined,
+      });
+    }
+  }
+  const imageByProposal = new Map<string, CreativePreview>();
+  for (const c of proposalContents ?? []) {
+    const preview = imageByContent.get(c.id);
+    if (preview && !imageByProposal.has(c.proposal_id)) {
+      imageByProposal.set(c.proposal_id, preview);
+    }
+  }
 
   const outcomes = (conversions ?? []).filter((c) => OUTCOME_CONVERSIONS.includes(c.type));
   const prevOutcomes = (prevConversions ?? []).filter((c) => OUTCOME_CONVERSIONS.includes(c.type));
@@ -159,23 +175,26 @@ export default async function DashboardHome() {
   }
 
   return (
-    <>
+    <div className="dashboard-home">
       <PageHeader
         title="AI広報部ホーム"
-        description="AI広報部が本日判断した内容と、承認をお待ちしている案件です。"
+        description="AIが収集・分析した情報をもとに、最適な広報活動をサポートします。"
         action={
           <>
             <AgentButton
+              icon={<Send size={17} />}
               label="今日の広報活動を実行"
               body={{ action: "daily_cycle", subjectId }}
               successMessage="AI広報部が本日の活動を実行しました"
             />
             <AgentButton
+              icon={<ChartNoAxesCombined size={17} />}
               label="今日の判断を見る"
               body={{ action: "decide_today", subjectId }}
               variant="secondary"
               successMessage="AIストラテジストの判断を取得しました"
             />
+            <HeaderMeta />
           </>
         }
       />
@@ -202,14 +221,16 @@ export default async function DashboardHome() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="dashboard-stats">
         <StatTile
           label="今月の成果（問い合わせ等）"
           value={outcomes.length}
           unit="件"
           hint="問い合わせ・予約・購入・成約"
           delta={momDelta(outcomes.length, prevOutcomes.length)}
-          accent="var(--color-analyst)"
+          accent="#2875ff"
+          showComparison
+          icon={<FileText size={23} />}
         />
         <StatTile
           label="CTAクリック"
@@ -217,33 +238,39 @@ export default async function DashboardHome() {
           unit="回"
           hint="専用リンク経由"
           delta={momDelta(clicks, prevClicks)}
-          accent="var(--color-marketer)"
+          accent="#8b4dff"
+          showComparison
+          icon={<Link2 size={23} />}
         />
         <StatTile
           label="成約金額"
           value={`¥${revenue.toLocaleString("ja-JP")}`}
           hint="今月の記録分"
           delta={momDelta(revenue, prevRevenue)}
-          accent="var(--color-writer)"
+          accent="#00b886"
+          showComparison
+          icon={<Database size={23} />}
         />
         <StatTile
           label="承認待ち"
           value={pendingCount}
           unit="件"
           hint="LINEからも承認できます"
-          accent="var(--color-secretary)"
+          accent="#ff8a20"
+          showComparison
+          icon={<Bell size={23} />}
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="bg-[#f4f8fd] border-brand-100">
+      <div className="dashboard-columns">
+        <div className="dashboard-primary">
+          <Card className="approval-card">
             <CardHeader
               title="承認をお待ちしています"
               subtitle="発信理由・目的・CTA・期待効果を確認して、承認 / 修正 / 保留 / 投稿しない を選べます。"
               icon={
                 <span className="text-[color:var(--color-secretary)]">
-                  <AgentIcon agent="secretary" size={20} />
+                  <MessageSquare size={24} />
                 </span>
               }
               action={
@@ -255,10 +282,10 @@ export default async function DashboardHome() {
 
             {!pending?.length ? (
               <EmptyState
-                className="bg-transparent"
+                className="approval-empty"
                 icon={
                   <span className="text-brand-400">
-                    <AgentIcon agent="secretary" size={28} />
+                    <FileText size={28} />
                   </span>
                 }
                 title="承認待ちの広報案はありません"
@@ -296,13 +323,13 @@ export default async function DashboardHome() {
             )}
           </Card>
 
-          <Card>
+          <Card className="proposal-card">
             <CardHeader
               title="AIストラテジストの提案"
               subtitle="「なぜ今日これを発信するか」の理由つきで提示されます。"
               icon={
                 <span className="text-[color:var(--color-strategist)]">
-                  <AgentIcon agent="strategist" size={20} />
+                  <Target size={26} />
                 </span>
               }
             />
@@ -321,22 +348,10 @@ export default async function DashboardHome() {
                   const isNew =
                     Date.now() - new Date(p.created_at as string).getTime() < 7 * 864e5;
                   return (
-                    <li key={p.id} className="rounded-xl border border-[var(--border)] p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                        <div className="relative w-full sm:w-[148px] h-[120px] sm:h-[104px] rounded-lg overflow-hidden shrink-0 bg-brand-50">
-                          {image ? (
-                            <img
-                              src={image}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              decoding="async"
-                              suppressHydrationWarning
-                            />
-                          ) : (
-                            <div className="h-full w-full grid place-items-center text-brand-300">
-                              <ImageIcon size={32} strokeWidth={1.4} />
-                            </div>
-                          )}
+                    <li key={p.id} className="proposal-row">
+                      <div className="flex flex-row gap-3">
+                        <div className="proposal-thumbnail relative rounded-lg overflow-hidden shrink-0 bg-brand-50">
+                          <ProposalThumb preview={image} theme={p.theme} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -405,7 +420,7 @@ export default async function DashboardHome() {
           </Card>
         </div>
 
-        <div className="space-y-4 sm:space-y-6">
+        <div className="dashboard-secondary">
           <Card>
             <CardHeader
               title="AI広報スコア"
@@ -417,7 +432,7 @@ export default async function DashboardHome() {
               }
             />
             <div className="flex flex-col items-center">
-              <ScoreRing value={score?.total ?? 0} />
+              <ScoreRing value={score?.total ?? 0} size={110} />
               {(score?.improvements as Array<{ action?: string }> | null)?.length ? (
                 <ul className="mt-4 space-y-1.5 w-full">
                   {(score!.improvements as Array<{ action?: string }>).slice(0, 3).map((im, i) => (
@@ -439,7 +454,7 @@ export default async function DashboardHome() {
           </Card>
 
           <Card>
-            <CardHeader title="KPI進捗" subtitle="広報目的から逆算した指標" />
+            <CardHeader title="KPI進捗" subtitle="広報目的から逆算した指標" icon={<ChartNoAxesCombined size={23} />} action={<Link href="/dashboard/settings" aria-label="KPIを設定">›</Link>} />
             {!kpis?.length ? (
               <p className="muted text-[13px]">KPIが未設定です。設定画面から目標を登録してください。</p>
             ) : (
@@ -478,7 +493,7 @@ export default async function DashboardHome() {
               title="投稿予定"
               icon={
                 <span className="text-[color:var(--color-marketer)]">
-                  <AgentIcon agent="marketer" size={20} />
+                  <Megaphone size={24} />
                 </span>
               }
               action={
@@ -594,6 +609,40 @@ export default async function DashboardHome() {
           </Card>
         </div>
       </div>
-    </>
+    </div>
+  );
+}
+
+function ProposalThumb({
+  preview,
+  theme,
+}: {
+  preview?: { url?: string; svg?: string };
+  theme: string;
+}) {
+  if (preview?.url) {
+    return (
+      <img
+        src={preview.url}
+        alt=""
+        className="h-full w-full object-cover"
+        decoding="async"
+        suppressHydrationWarning
+      />
+    );
+  }
+  if (preview?.svg) {
+    return (
+      <div
+        className="proposal-thumb-svg h-full w-full"
+        aria-hidden
+        dangerouslySetInnerHTML={{ __html: preview.svg }}
+      />
+    );
+  }
+  return (
+    <div className="h-full w-full grid place-items-center text-brand-300" aria-label={theme}>
+      <ImageIcon size={32} strokeWidth={1.4} />
+    </div>
   );
 }

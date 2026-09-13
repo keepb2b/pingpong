@@ -51,7 +51,7 @@ export default async function FactsPage() {
         action={<AddFact subjectId={ctx.subjectId} />}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatTile label="登録件数" value={list.length} unit="件" accent="var(--color-analyst)" />
         <StatTile
           label="公開可能"

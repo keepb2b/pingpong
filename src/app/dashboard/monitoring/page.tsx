@@ -42,7 +42,7 @@ export default async function MonitoringPage() {
         action={<AddCompetitor subjectId={ctx.subjectId} />}
       />
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader title="検知した変化" subtitle="重要度の高いものはLINEへ通知されます。" />

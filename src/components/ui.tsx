@@ -117,7 +117,7 @@ export function Card({
   className?: string;
   padded?: boolean;
 }) {
-  return <div className={`card ${padded ? "p-4 sm:p-5" : ""} ${className}`}>{children}</div>;
+  return <div className={`card ui-card ${padded ? "ui-card-padded p-4 sm:p-5" : ""} ${className}`}>{children}</div>;
 }
 
 export function CardHeader({
@@ -132,7 +132,7 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-4 sm:mb-5">
+    <div className="card-header flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-4 sm:mb-5">
       <div className="flex items-start gap-2.5 min-w-0">
         {icon && (
           <span className="shrink-0 mt-0.5 h-8 w-8 rounded-lg bg-brand-50 text-brand-700 grid place-items-center">
@@ -187,6 +187,7 @@ export function StatTile({
   accent,
   icon,
   spark,
+  showComparison = false,
 }: {
   label: string;
   value: ReactNode;
@@ -196,12 +197,13 @@ export function StatTile({
   accent?: string;
   icon?: ReactNode;
   spark?: number[];
+  showComparison?: boolean;
 }) {
   const color = accent ?? "var(--color-brand-600)";
   const series = spark && spark.length > 1 && spark.some((n) => n > 0) ? spark : null;
 
   return (
-    <div className="card p-4 sm:p-5 relative overflow-hidden min-h-[108px] sm:min-h-[120px]">
+    <div className="stat-tile card p-4 sm:p-5 relative overflow-hidden min-h-[108px] sm:min-h-[120px]">
       <div className={`flex items-start gap-3 ${series ? "pr-[4.5rem] sm:pr-[5.5rem]" : ""}`}>
         {icon && (
           <span
@@ -221,6 +223,9 @@ export function StatTile({
             {unit && <span className="text-[13px] font-medium muted ml-1">{unit}</span>}
           </p>
           <div className="mt-2 sm:mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 min-h-[16px]">
+            {showComparison && (typeof delta !== "number" || !Number.isFinite(delta)) && (
+              <span className="muted text-[12px]">前月比 <span className="text-amber-500">—</span></span>
+            )}
             {typeof delta === "number" && Number.isFinite(delta) && (
               <span
                 className={`text-[12px] font-semibold tabular-nums ${delta >= 0 ? "text-[#1d7a4a]" : "text-[#c8102e]"}`}
@@ -622,7 +627,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`text-center py-10 px-4 sm:px-6 rounded-xl ${className || "bg-[var(--surface-2)]"}`}>
+    <div className={`empty-state text-center py-10 px-4 sm:px-6 rounded-xl ${className || "bg-[var(--surface-2)]"}`}>
       {icon && <div className="mx-auto mb-2.5 muted w-fit">{icon}</div>}
       <p className="font-semibold text-[13px]">{title}</p>
       {body && <p className="muted text-[12px] mt-1.5 max-w-md mx-auto leading-relaxed">{body}</p>}

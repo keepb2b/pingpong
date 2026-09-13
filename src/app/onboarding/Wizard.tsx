@@ -15,7 +15,7 @@ import {
   ProgressBar,
 } from "@/components/ui";
 import { AgentIcon, LineIcon } from "@/components/icons/AgentIcons";
-import { Logo } from "@/components/Logo";
+import { DashboardBrand } from "@/components/dashboard/Brand";
 import {
   AGENTS,
   GOALS,
@@ -591,7 +591,7 @@ function Shell({
     <main className="min-h-dvh py-6 sm:py-10 px-4 sm:px-5 relative bg-[var(--surface-2)]">
       <div className="relative mx-auto max-w-2xl">
         <div className="flex items-center justify-center mb-6">
-          <Logo size={28} />
+          <DashboardBrand />
         </div>
         <Card className="p-5 sm:p-8">{children}</Card>
         {total > 1 && (

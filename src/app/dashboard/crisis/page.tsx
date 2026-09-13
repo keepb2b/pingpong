@@ -92,7 +92,7 @@ export default async function CrisisPage() {
                   />
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="page-grid grid lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     {facts.length > 0 && (
                       <section>

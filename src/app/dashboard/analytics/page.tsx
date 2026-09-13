@@ -121,7 +121,7 @@ export default async function AnalyticsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8 stagger">
+      <div className="metric-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8 stagger">
         <StatTile label="表示" value={totals.impressions} accent="var(--color-strategist)" />
         <StatTile label="エンゲージメント" value={totals.engagements} accent="var(--color-marketer)" />
         <StatTile label="CTAクリック" value={totals.clicks} accent="var(--color-writer)" />
@@ -133,7 +133,7 @@ export default async function AnalyticsPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader

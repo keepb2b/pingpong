@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Field, Input, PasswordInput, callApi, toast } from "@/components/ui";
 import { takePendingAvatar } from "@/lib/upload";
-import { Logo } from "@/components/Logo";
+import { DashboardBrand } from "@/components/dashboard/Brand";
 
 function LoginForm() {
   const router = useRouter();
@@ -72,7 +72,7 @@ export default function LoginPage() {
       <header className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-5 h-16 flex items-center">
           <Link href="/">
-            <Logo size={30} />
+            <DashboardBrand />
           </Link>
         </div>
       </header>
