@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, ProgressBar } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -47,7 +47,7 @@ export default async function KartePage() {
         </p>
       </Card>
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader title="カルテ項目" subtitle="クリックすると編集できます。" />
@@ -55,7 +55,7 @@ export default async function KartePage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="ブランド人格・文章トーン"

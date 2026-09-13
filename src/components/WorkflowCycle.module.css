@@ -1,5 +1,6 @@
 .wrap {
   margin: 8px 0 4px;
+  overflow: hidden;
 }
 
 .stage {
@@ -79,10 +80,7 @@
 }
 
 @media (max-width: 640px) {
-  .captionBody {
-    display: none;
-  }
   .caption {
-    width: 22cqi;
+    display: none;
   }
 }

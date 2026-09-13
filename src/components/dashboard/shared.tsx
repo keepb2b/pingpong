@@ -20,7 +20,7 @@ export function PageHeader({
   const meta = agent ? AGENTS.find((a) => a.key === agent) : null;
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
+    <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
       <div className="flex items-start gap-3 min-w-0">
         {meta && (
           <span className="h-10 w-10 rounded-lg bg-brand-50 text-brand-700 grid place-items-center shrink-0">
@@ -39,7 +39,7 @@ export function PageHeader({
           )}
         </div>
       </div>
-      {action && <div className="flex flex-wrap gap-2">{action}</div>}
+      {action && <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">{action}</div>}
     </div>
   );
 }
@@ -52,6 +52,8 @@ export function AgentButton({
   size = "md",
   successMessage,
   onDone,
+  icon,
+  className = "",
 }: {
   label: string;
   body: Record<string, unknown>;
@@ -59,6 +61,8 @@ export function AgentButton({
   size?: "sm" | "md" | "lg";
   successMessage?: string;
   onDone?: (data: unknown) => void;
+  icon?: ReactNode;
+  className?: string;
 }) {
   const router = useRouter();
 
@@ -66,6 +70,8 @@ export function AgentButton({
     <Button
       variant={variant}
       size={size}
+      icon={icon}
+      className={`w-full sm:w-auto ${className}`}
       onClick={async () => {
         const data = await callApi("/api/agents", body);
         if (data === null) return;
@@ -103,6 +109,7 @@ export function ActionButton({
     <Button
       variant={variant}
       size={size}
+      className="w-full sm:w-auto"
       onClick={async () => {
         if (confirm && !window.confirm(confirm)) return;
         const data = await callApi(path, body);

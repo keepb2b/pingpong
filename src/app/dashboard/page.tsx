@@ -1,15 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  Megaphone,
-  MousePointerClick,
-  CircleDollarSign,
-  ClipboardCheck,
-  FileText,
-  CalendarDays,
-  LineChart,
-  Inbox,
-} from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile, EmptyState } from "@/components/ui";
 import { statusTone, riskTone } from "@/lib/badge-tone";
@@ -17,13 +8,16 @@ import { PageHeader, AgentButton } from "@/components/dashboard/shared";
 import { ProposalActions } from "@/components/dashboard/ProposalActions";
 import { formatDateTime } from "@/lib/format-date";
 import { ScoreRing } from "@/components/charts";
+import { AgentIcon, LineIcon, LoopIcon } from "@/components/icons/AgentIcons";
 import {
+  AGENTS,
   CHANNEL_LABEL,
   CONTENT_TYPE_LABEL,
   GOAL_LABEL,
   STATUS_LABEL,
   RISK_LABEL,
   OUTCOME_CONVERSIONS,
+  type AgentKey,
 } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +50,8 @@ export default async function DashboardHome() {
     { data: signals },
     { data: intake },
     { data: lineAccounts },
+    { data: latestNote },
+    { data: recentRuns },
   ] = await Promise.all([
     sb
       .from("content_items")
@@ -111,6 +107,19 @@ export default async function DashboardHome() {
       .order("created_at", { ascending: false })
       .limit(5),
     sb.from("line_accounts").select("id").eq("org_id", ctx.orgId).limit(1),
+    sb
+      .from("notifications")
+      .select("title, body, agent, created_at")
+      .eq("subject_id", subjectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    sb
+      .from("ai_runs")
+      .select("agent, created_at, ok, task")
+      .eq("subject_id", subjectId)
+      .order("created_at", { ascending: false })
+      .limit(40),
   ]);
 
   const proposalIds = (proposals ?? []).map((p) => p.id);
@@ -119,6 +128,20 @@ export default async function DashboardHome() {
     : { data: [] as Array<{ id: string; proposal_id: string; status: string }> };
   const contentByProposal = new Map(
     (proposalContents ?? []).map((c) => [c.proposal_id, { id: c.id, status: c.status }]),
+  );
+
+  const contentIds = (proposalContents ?? []).map((c) => c.id);
+  const { data: creatives } = contentIds.length
+    ? await sb.from("creatives").select("content_id, url").in("content_id", contentIds)
+    : { data: [] as Array<{ content_id: string; url: string | null }> };
+  const imageByContent = new Map(
+    (creatives ?? []).filter((c) => c.url).map((c) => [c.content_id, c.url as string]),
+  );
+  const imageByProposal = new Map(
+    (proposalContents ?? []).flatMap((c) => {
+      const url = imageByContent.get(c.id);
+      return url ? [[c.proposal_id, url] as const] : [];
+    }),
   );
 
   const outcomes = (conversions ?? []).filter((c) => OUTCOME_CONVERSIONS.includes(c.type));
@@ -130,17 +153,22 @@ export default async function DashboardHome() {
   const lineConnected = (lineAccounts ?? []).length > 0;
   const pendingCount = pending?.length ?? 0;
 
+  const lastByAgent = new Map<string, { created_at: string; ok: boolean; task: string }>();
+  for (const run of recentRuns ?? []) {
+    if (!lastByAgent.has(run.agent)) lastByAgent.set(run.agent, run);
+  }
+
   return (
     <>
       <PageHeader
         title="AI広報部ホーム"
-        description="収集・分析した情報をもとに、最適な広報活動を確認し、次の判断と承認を行います。"
+        description="AI広報部が本日判断した内容と、承認をお待ちしている案件です。"
         action={
           <>
             <AgentButton
               label="今日の広報活動を実行"
               body={{ action: "daily_cycle", subjectId }}
-              successMessage="本日の広報活動を開始しました。完了するとお知らせに表示されます"
+              successMessage="AI広報部が本日の活動を実行しました"
             />
             <AgentButton
               label="今日の判断を見る"
@@ -153,26 +181,35 @@ export default async function DashboardHome() {
       />
 
       {!lineConnected && (
-        <div className="card p-4 mb-6">
-          <p className="text-sm font-medium">LINEを連携すると、AI秘書からのヒアリングが始まります</p>
-          <p className="muted text-[13px] mt-1">
-            設定画面で連携コードを発行し、公式アカウントとの1対1トークに送信してください。
-          </p>
-          <Link href="/dashboard/settings#line" className="inline-block mt-2 text-[13px] text-brand-700 font-medium hover:underline">
-            LINE連携の設定へ
-          </Link>
+        <div className="card p-4 mb-6 border-brand-200 bg-brand-50/70">
+          <div className="flex items-start gap-3">
+            <span className="text-[color:var(--color-writer)] mt-0.5 shrink-0">
+              <LineIcon size={20} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">LINEを連携すると、AI秘書からのヒアリングが始まります</p>
+              <p className="muted text-[13px] mt-1">
+                設定画面で連携コードを発行し、LINEのトークに送信してください。以降は出来事を送るだけで広報が回ります。
+              </p>
+              <Link
+                href="/dashboard/settings#line"
+                className="inline-block mt-2 text-[13px] text-brand-700 font-medium hover:underline"
+              >
+                LINE連携の設定へ →
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <StatTile
           label="今月の成果（問い合わせ等）"
           value={outcomes.length}
           unit="件"
           hint="問い合わせ・予約・購入・成約"
           delta={momDelta(outcomes.length, prevOutcomes.length)}
-          accent="var(--color-brand-600)"
-          icon={<Megaphone size={18} strokeWidth={1.75} />}
+          accent="var(--color-analyst)"
         />
         <StatTile
           label="CTAクリック"
@@ -180,36 +217,37 @@ export default async function DashboardHome() {
           unit="回"
           hint="専用リンク経由"
           delta={momDelta(clicks, prevClicks)}
-          accent="var(--color-brand-500)"
-          icon={<MousePointerClick size={18} strokeWidth={1.75} />}
+          accent="var(--color-marketer)"
         />
         <StatTile
           label="成約金額"
           value={`¥${revenue.toLocaleString("ja-JP")}`}
           hint="今月の記録分"
           delta={momDelta(revenue, prevRevenue)}
-          accent="var(--color-good)"
-          icon={<CircleDollarSign size={18} strokeWidth={1.75} />}
+          accent="var(--color-writer)"
         />
         <StatTile
           label="承認待ち"
           value={pendingCount}
           unit="件"
-          hint="確認して承認 / 修正できます"
-          accent="var(--color-warn)"
-          icon={<ClipboardCheck size={18} strokeWidth={1.75} />}
+          hint="LINEからも承認できます"
+          accent="var(--color-secretary)"
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="bg-[#f4f8fd] border-brand-100">
             <CardHeader
               title="承認をお待ちしています"
-              subtitle="発信理由・目的・CTA・期待効果を確認し、承認 / 修正 / 保留を選べます。"
-              icon={<ClipboardCheck size={16} strokeWidth={1.75} />}
+              subtitle="発信理由・目的・CTA・期待効果を確認して、承認 / 修正 / 保留 / 投稿しない を選べます。"
+              icon={
+                <span className="text-[color:var(--color-secretary)]">
+                  <AgentIcon agent="secretary" size={20} />
+                </span>
+              }
               action={
-                <Link href="/dashboard/content?status=pending_approval" className="text-[13px] text-brand-700 font-medium hover:underline">
+                <Link href="/dashboard/content?status=pending_approval" className="text-[13px] text-brand-600 font-semibold hover:underline">
                   すべて見る
                 </Link>
               }
@@ -217,9 +255,14 @@ export default async function DashboardHome() {
 
             {!pending?.length ? (
               <EmptyState
-                icon={<FileText size={28} strokeWidth={1.5} />}
-                title="現在、承認待ちの案件はありません"
-                body="新しい広報材料が登録され、制作が進むと、ここに確認依頼が表示されます。"
+                className="bg-transparent"
+                icon={
+                  <span className="text-brand-400">
+                    <AgentIcon agent="secretary" size={28} />
+                  </span>
+                }
+                title="承認待ちの広報案はありません"
+                body="AI秘書が新しい広報材料を集めると、ここに提案が並びます。"
               />
             ) : (
               <ul className="space-y-3">
@@ -256,8 +299,12 @@ export default async function DashboardHome() {
           <Card>
             <CardHeader
               title="AIストラテジストの提案"
-              subtitle="なぜ今日この発信が必要かを、根拠と期待効果つきで示します。"
-              icon={<LineChart size={16} strokeWidth={1.75} />}
+              subtitle="「なぜ今日これを発信するか」の理由つきで提示されます。"
+              icon={
+                <span className="text-[color:var(--color-strategist)]">
+                  <AgentIcon agent="strategist" size={20} />
+                </span>
+              }
             />
 
             {!proposals?.length ? (
@@ -270,29 +317,54 @@ export default async function DashboardHome() {
                 {proposals.map((p) => {
                   const linked = contentByProposal.get(p.id);
                   const channels = Array.isArray(p.channels) ? p.channels : [];
+                  const image = imageByProposal.get(p.id);
+                  const isNew =
+                    Date.now() - new Date(p.created_at as string).getTime() < 7 * 864e5;
                   return (
-                    <li key={p.id} className="p-4 rounded-xl border border-[var(--border)]">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-[15px] font-semibold leading-snug">{p.theme}</p>
-                        <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
+                    <li key={p.id} className="rounded-xl border border-[var(--border)] p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <div className="relative w-full sm:w-[148px] h-[120px] sm:h-[104px] rounded-lg overflow-hidden shrink-0 bg-brand-50">
+                          {image ? (
+                            <img
+                              src={image}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              decoding="async"
+                              suppressHydrationWarning
+                            />
+                          ) : (
+                            <div className="h-full w-full grid place-items-center text-brand-300">
+                              <ImageIcon size={32} strokeWidth={1.4} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              {isNew && <Badge tone="warn">新規提案</Badge>}
+                              <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
+                            </div>
+                          </div>
+                          <p className="text-[15px] font-semibold leading-snug mt-2">{p.theme}</p>
+                          <p className="text-[13px] mt-1.5 leading-relaxed text-ink-700 line-clamp-2">{p.reason}</p>
+                          {p.expected_effect && (
+                            <p className="text-[13px] mt-1.5 text-ink-700 line-clamp-2">
+                              <span className="font-medium text-ink-800">期待される効果：</span>
+                              {p.expected_effect}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                            {p.goal && (
+                              <Badge tone="brand">{GOAL_LABEL[p.goal as keyof typeof GOAL_LABEL]}</Badge>
+                            )}
+                            {channels.map((ch: string) => (
+                              <Badge key={ch}>{CHANNEL_LABEL[ch as keyof typeof CHANNEL_LABEL] ?? ch}</Badge>
+                            ))}
+                          </div>
+                          {p.cta && <p className="text-[12px] muted mt-2">CTA：{p.cta}</p>}
+                          <ProposalActions contentId={linked?.id} status={linked?.status ?? p.status} />
+                        </div>
                       </div>
-                      <p className="text-[13px] mt-2 leading-relaxed text-ink-700">{p.reason}</p>
-                      {p.expected_effect && (
-                        <p className="text-[13px] mt-2 text-ink-700">
-                          <span className="font-medium text-ink-800">期待される効果：</span>
-                          {p.expected_effect}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                        {p.goal && (
-                          <Badge tone="brand">{GOAL_LABEL[p.goal as keyof typeof GOAL_LABEL]}</Badge>
-                        )}
-                        {channels.map((ch: string) => (
-                          <Badge key={ch}>{CHANNEL_LABEL[ch as keyof typeof CHANNEL_LABEL] ?? ch}</Badge>
-                        ))}
-                      </div>
-                      {p.cta && <p className="text-[12px] muted mt-2">CTA：{p.cta}</p>}
-                      <ProposalActions contentId={linked?.id} status={linked?.status ?? p.status} />
                     </li>
                   );
                 })}
@@ -303,8 +375,12 @@ export default async function DashboardHome() {
           <Card>
             <CardHeader
               title="収集した広報材料"
-              subtitle="まだ発信に使っていない、ヒアリングから集まった情報です。"
-              icon={<Inbox size={16} strokeWidth={1.75} />}
+              subtitle="LINEでのヒアリングから集まった、まだ発信に使っていない情報です。"
+              icon={
+                <span className="text-[color:var(--color-secretary)]">
+                  <LineIcon size={20} />
+                </span>
+              }
               action={
                 <Link href="/dashboard/intake" className="text-[13px] text-brand-700 font-medium hover:underline">
                   すべて見る
@@ -329,20 +405,35 @@ export default async function DashboardHome() {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="AI広報スコア"
               subtitle={score?.period ? `${score.period} 時点` : "月末に算出されます"}
-              icon={<LineChart size={16} strokeWidth={1.75} />}
+              icon={
+                <span className="text-[color:var(--color-analyst)]">
+                  <AgentIcon agent="analyst" size={20} />
+                </span>
+              }
             />
             <div className="flex flex-col items-center">
               <ScoreRing value={score?.total ?? 0} />
-              <p className="muted text-[13px] mt-3 text-center leading-relaxed">
-                10観点で算出し、点数の根拠と改善方法まで表示します。
-              </p>
-              <Link href="/dashboard/score" className="mt-3 text-[13px] text-brand-700 font-medium hover:underline">
-                内訳と改善提案を見る
+              {(score?.improvements as Array<{ action?: string }> | null)?.length ? (
+                <ul className="mt-4 space-y-1.5 w-full">
+                  {(score!.improvements as Array<{ action?: string }>).slice(0, 3).map((im, i) => (
+                    <li key={i} className="text-[13px] flex items-start gap-2">
+                      <span className="text-amber-600 mt-0.5 shrink-0">→</span>
+                      <span className="leading-relaxed">{im.action}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted text-[13px] mt-3 text-center leading-relaxed">
+                  スコアは10観点で算出し、点数の根拠と改善方法まで表示します。
+                </p>
+              )}
+              <Link href="/dashboard/score" className="mt-3 text-[13px] text-brand-600 font-semibold hover:underline">
+                内訳と改善提案を見る →
               </Link>
             </div>
           </Card>
@@ -385,7 +476,11 @@ export default async function DashboardHome() {
           <Card>
             <CardHeader
               title="投稿予定"
-              icon={<CalendarDays size={16} strokeWidth={1.75} />}
+              icon={
+                <span className="text-[color:var(--color-marketer)]">
+                  <AgentIcon agent="marketer" size={20} />
+                </span>
+              }
               action={
                 <Link href="/dashboard/calendar" className="text-[13px] text-brand-700 font-medium hover:underline">
                   一覧
@@ -441,6 +536,60 @@ export default async function DashboardHome() {
                   </li>
                 ))}
               </ul>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="AI広報部の稼働状況"
+              icon={
+                <span className="text-brand-600">
+                  <LoopIcon size={20} />
+                </span>
+              }
+            />
+            <ul className="space-y-2.5">
+              {AGENTS.map((a) => {
+                const last = lastByAgent.get(a.key);
+                const hoursAgo = last
+                  ? (Date.now() - new Date(last.created_at).getTime()) / 36e5
+                  : null;
+                const active = hoursAgo != null && hoursAgo < 36 && last?.ok !== false;
+                const status =
+                  last?.ok === false
+                    ? "要確認"
+                    : active
+                      ? "稼働中"
+                      : last
+                        ? formatDateTime(last.created_at)
+                        : "待機中";
+                return (
+                  <li key={a.key} className="flex items-center gap-2.5">
+                    <span style={{ color: a.color }} className="shrink-0">
+                      <AgentIcon agent={a.key as AgentKey} size={22} />
+                    </span>
+                    <span className="text-[13px] font-medium flex-1 min-w-0 truncate">{a.name}</span>
+                    <span className="text-[11px] muted tabular-nums shrink-0">{status}</span>
+                    <span
+                      className="h-1.5 w-1.5 rounded-full shrink-0"
+                      title={status}
+                      style={{
+                        background:
+                          last?.ok === false
+                            ? "var(--color-bad)"
+                            : active
+                              ? "var(--color-good)"
+                              : "var(--color-ink-300)",
+                      }}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+            {latestNote && (
+              <p className="muted text-[12px] mt-4 pt-3 border-t border-[var(--border)] leading-relaxed">
+                最新: {latestNote.title}
+              </p>
             )}
           </Card>
         </div>

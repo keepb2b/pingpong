@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -88,8 +88,8 @@ export default async function BillingPage({
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader
               title="料金内訳"
@@ -173,7 +173,7 @@ export default async function BillingPage({
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="月額料金に含まれるもの" />
             <ul className="space-y-1.5">

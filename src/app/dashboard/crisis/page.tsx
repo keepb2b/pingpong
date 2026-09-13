@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { riskTone } from "@/lib/badge-tone";
@@ -50,7 +50,7 @@ export default async function CrisisPage() {
           />
         </Card>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           {active.map((inc) => {
             const facts = (inc.facts ?? []) as Array<{ fact: string; confirmed: boolean }>;
             const qa = (inc.qa ?? []) as Array<{ q: string; a: string }>;
@@ -92,7 +92,7 @@ export default async function CrisisPage() {
                   />
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-5">
+                <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     {facts.length > 0 && (
                       <section>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
@@ -63,24 +63,28 @@ export default async function CalendarPage() {
           />
           <ul className="space-y-2">
             {overdue.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 text-xs">
-                <Badge tone="info">{CHANNEL_LABEL[p.channel as ChannelKey] ?? p.channel}</Badge>
-                <span className="truncate flex-1">{p.body}</span>
-                <span className="muted tabular-nums shrink-0">{formatDateTime(p.scheduled_for)}</span>
-                <ActionButton
-                  label="今すぐ投稿"
-                  path="/api/workflow"
-                  body={{ action: "publish_now", id: p.id }}
-                  variant="primary"
-                />
+              <li key={p.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Badge tone="info">{CHANNEL_LABEL[p.channel as ChannelKey] ?? p.channel}</Badge>
+                  <span className="truncate flex-1">{p.body}</span>
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                  <span className="muted tabular-nums">{formatDateTime(p.scheduled_for)}</span>
+                  <ActionButton
+                    label="今すぐ投稿"
+                    path="/api/workflow"
+                    body={{ action: "publish_now", id: p.id }}
+                    variant="primary"
+                  />
+                </div>
               </li>
             ))}
           </ul>
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="これからの投稿" action={<Badge tone="brand">{upcoming.length}件</Badge>} />
 
@@ -90,7 +94,7 @@ export default async function CalendarPage() {
                 body="コンテンツを承認すると、媒体ごとに投稿が予約されます。"
               />
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-6">
                 {Object.entries(byDay).map(([day, list]) => (
                   <div key={day}>
                     <p className="text-xs font-semibold mb-2 sticky top-16 bg-[var(--surface)] py-1">

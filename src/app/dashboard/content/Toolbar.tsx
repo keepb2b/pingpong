@@ -40,7 +40,7 @@ export function ContentToolbar({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="flex flex-wrap gap-1.5 flex-1">
           {FILTERS.map((f) => {
             const on = active === f.key;
@@ -61,7 +61,7 @@ export function ContentToolbar({
           })}
         </div>
 
-        <Button onClick={() => setOpen(true)}>AIライターに制作を依頼</Button>
+        <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}>AIライターに制作を依頼</Button>
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="AIライターに制作を依頼">
@@ -84,7 +84,7 @@ export function ContentToolbar({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="広報目的">
               <Select value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}>
                 {GOALS.map((g) => (

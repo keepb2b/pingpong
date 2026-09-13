@@ -31,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-[var(--surface-2)]">
       <header className="bg-[var(--sidebar)] text-white">
         <div className="mx-auto max-w-[1500px] px-4 sm:px-6">
-          <div className="h-14 flex items-center gap-4">
+          <div className="h-14 flex items-center gap-2 sm:gap-4 min-w-0">
             <Link href="/admin" className="flex items-center gap-2.5 min-w-0">
               <Logo size={26} className="[&_img]:brightness-0 [&_img]:invert" />
               <span className="px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-semibold tracking-wide">
@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </span>
             </Link>
 
-            <div className="ml-auto flex items-center gap-4 text-[12px]">
+            <div className="ml-auto flex items-center gap-2 sm:gap-4 text-[11px] sm:text-[12px] shrink-0">
               <span className="hidden sm:inline text-[var(--sidebar-muted)] tabular-nums">
                 登録ユーザー {userCount ?? 0}名
               </span>
@@ -61,7 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-4 sm:px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-[1500px] px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>
   );
 }

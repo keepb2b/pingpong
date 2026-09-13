@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader, AgentButton, ActionButton } from "@/components/dashboard/shared";
@@ -76,8 +76,8 @@ export default async function ReportsPage({
             </div>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 space-y-5">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <Card>
                 <CardHeader
                   title={`${report.period} 総括`}
@@ -134,7 +134,7 @@ export default async function ReportsPage({
                 )}
               />
 
-              <div className="grid sm:grid-cols-2 gap-5">
+              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                 <ReportList
                   title="成果が出た理由"
                   rows={report.wins as Row[]}
@@ -186,7 +186,7 @@ export default async function ReportsPage({
               />
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-6">
               <Card>
                 <CardHeader title="来月の戦略" />
                 {report.next_strategy ? (

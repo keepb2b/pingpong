@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { PRICING, SETUP_INCLUDES, yen, GOALS, RISK_CHECKPOINTS } from "@/lib/constants";
 import { LineIcon, LoopIcon, ShieldCheckIcon } from "@/components/icons/AgentIcons";
 import { Logo, LogoMark } from "@/components/Logo";
@@ -42,10 +42,10 @@ export default function LandingPage() {
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ------------------------------------------------------------ nav -- */}
       <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-40">
-        <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between gap-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 h-16 flex items-center justify-between gap-2 sm:gap-4">
           <Logo size={30} />
 
-          <nav className="flex items-center gap-1 text-[13px]">
+          <nav className="flex items-center gap-1 text-[13px] shrink-0">
             <a href="#problems" className="hidden md:block px-3 py-2 muted hover:text-[var(--text)]">
               解決する課題
             </a>
@@ -58,10 +58,10 @@ export default function LandingPage() {
             <a href="#pricing" className="hidden md:block px-3 py-2 muted hover:text-[var(--text)]">
               料金
             </a>
-            <Link href="/login" className="btn btn-secondary h-9 px-4 text-[13px] ml-2">
+            <Link href="/login" className="btn btn-secondary h-9 px-3 sm:px-4 text-[12px] sm:text-[13px] ml-1 sm:ml-2">
               <span>ログイン</span>
             </Link>
-            <Link href="/signup" className="btn btn-primary h-9 px-4 text-[13px]">
+            <Link href="/signup" className="btn btn-primary h-9 px-3 sm:px-4 text-[12px] sm:text-[13px]">
               <span>新規登録</span>
             </Link>
           </nav>
@@ -70,7 +70,7 @@ export default function LandingPage() {
 
       {/* ----------------------------------------------------------- hero -- */}
       <section className="bg-[var(--surface)] border-b border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-12 sm:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
           <div>
             <p className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-[12px] font-bold px-2.5 py-1 rounded-md">
               <LineIcon size={14} />
@@ -139,7 +139,7 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------- problems -- */}
-      <section id="problems" className="mx-auto max-w-6xl px-5 py-14">
+      <section id="problems" className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
         <ProblemsDiagram />
       </section>
 
@@ -149,7 +149,7 @@ export default function LandingPage() {
       </section>
 
       {/* ----------------------------------------------------------- cycle - */}
-      <section className="mx-auto max-w-6xl px-5 py-14">
+      <section className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
         <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2 flex items-center gap-2">
           <span className="text-brand-600">
             <LoopIcon size={20} />
@@ -175,7 +175,7 @@ export default function LandingPage() {
 
       {/* --------------------------------------------------------- funnel -- */}
       <section className="bg-[var(--surface)] border-y border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-5 py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">広報目的から逆算した戦略設計</h2>
           <p className="muted text-[13px] mb-6 leading-[1.9]">
             AI広報は、投稿数を増やすこと自体を目的にしません。最初に企業が達成したい目的を設定し、
@@ -198,7 +198,7 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------- features -- */}
-      <section id="features" className="mx-auto max-w-6xl px-5 py-14">
+      <section id="features" className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
         <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-6">主な機能</h2>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -236,7 +236,7 @@ export default function LandingPage() {
 
       {/* -------------------------------------------------------- pricing -- */}
       <section id="pricing" className="bg-[var(--surface)] border-t border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-5 py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-14">
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">料金</h2>
           <p className="muted text-[13px] mb-6">
             料金プランは一つだけです。対話頻度、投稿頻度、使用媒体は自由に設定できます。
@@ -280,7 +280,7 @@ export default function LandingPage() {
             </table>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-5">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="card p-5">
               <h3 className="text-[15px] font-semibold mb-3">初期費用に含まれるもの</h3>
               <ul className="grid sm:grid-cols-2 gap-x-5 gap-y-1">
@@ -319,7 +319,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <table className="spec-table mt-5">
+          <div className="overflow-x-auto scroll-thin mt-5">
+          <table className="spec-table">
             <tbody>
               <tr>
                 <th>対話頻度</th>
@@ -335,6 +336,7 @@ export default function LandingPage() {
               </tr>
             </tbody>
           </table>
+          </div>
 
           <p className="mt-4 text-[12px] muted">{PRICING.taxNote}</p>
 
@@ -350,7 +352,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="bg-ink-900 text-white/70">
-        <div className="mx-auto max-w-6xl px-5 py-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 py-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <LogoMark size={26} />
             <span className="text-[13px] text-white font-semibold">AI広報</span>

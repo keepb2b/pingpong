@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader, AgentButton } from "@/components/dashboard/shared";
@@ -58,8 +58,8 @@ export default async function ScorePage() {
           />
         </Card>
       ) : (
-        <div className="grid lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 space-y-5">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <Card>
               <CardHeader
                 title="観点別スコア"
@@ -117,7 +117,7 @@ export default async function ScorePage() {
             )}
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader title="総合スコア" subtitle={`${latest.period} 時点`} />
               <div className="flex flex-col items-center">

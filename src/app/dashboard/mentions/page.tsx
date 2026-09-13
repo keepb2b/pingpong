@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { riskTone } from "@/lib/badge-tone";
@@ -58,7 +58,7 @@ export default async function MentionsPage() {
         action={<AddMention subjectId={subjectId} />}
       />
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-6">
         {needsHuman.length > 0 && (
           <Card className="border-red-300">
             <CardHeader

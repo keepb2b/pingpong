@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
@@ -42,7 +42,7 @@ export default async function MonitoringPage() {
         action={<AddCompetitor subjectId={ctx.subjectId} />}
       />
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader title="検知した変化" subtitle="重要度の高いものはLINEへ通知されます。" />
@@ -103,7 +103,7 @@ export default async function MonitoringPage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="監視中の競合" />
             {!competitors?.length ? (

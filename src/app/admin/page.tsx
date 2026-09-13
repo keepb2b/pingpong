@@ -1,4 +1,4 @@
-import { listAllUsers, summarizeUsers } from "@/lib/admin";
+﻿import { listAllUsers, summarizeUsers } from "@/lib/admin";
 import { Card, CardHeader, StatTile } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard/shared";
 import { TrendChart, ChannelBars } from "@/components/charts";
@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* -------------------------------------------------------- 図表 --- */}
-      <div className="grid lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader
             title="新規登録の推移"
@@ -58,7 +58,7 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card>
           <CardHeader title="最終利用からの経過" subtitle="休眠ユーザーの把握に使います。" />
           <ChannelBars items={s.activityBreakdown} unit="名" />

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, EmptyState } from "@/components/ui";
 import { PageHeader, ActionButton } from "@/components/dashboard/shared";
@@ -58,8 +58,8 @@ export default async function MediaPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="提案の状況" subtitle="送付履歴・返信・取材・掲載実績を管理します。" />
 
@@ -157,7 +157,7 @@ export default async function MediaPage() {
           )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="媒体リスト" subtitle="相性スコアの高い順" />
             {!outlets?.length ? (
