@@ -2,11 +2,7 @@
 
 /* ==========================================================================
    AI広報 — デザイントークン
-   日本のコーポレートサイトの作法に合わせる:
-   ・紺 (コーポレートカラー) + 赤 (強調) の2色構成
-   ・角丸は 4px まで。境界線をはっきり見せる
-   ・見出しは左の縦罫で示す
-   ・情報密度は高め。過度な余白とグラデーションは使わない
+   日本企業向け業務SaaS: ネイビー / ブルー / 白 / 薄いグレー
    ========================================================================== */
 @theme inline {
   --font-sans: var(--font-noto-sans), "Noto Sans JP", sans-serif;
@@ -16,48 +12,45 @@
 
 @theme {
 
-  /* 紺 — コーポレートカラー */
-  --color-brand-50: #eef3f9;
-  --color-brand-100: #d8e4f1;
-  --color-brand-200: #b0c8e2;
-  --color-brand-300: #7ea5cf;
-  --color-brand-400: #4a7cb5;
-  --color-brand-500: #1f5a9c;
-  --color-brand-600: #123a6b;
-  --color-brand-700: #0e2f57;
-  --color-brand-800: #0a2342;
-  --color-brand-900: #06182e;
+  --color-brand-50: #eef4fb;
+  --color-brand-100: #d9e7f6;
+  --color-brand-200: #b6d0ec;
+  --color-brand-300: #84b0dd;
+  --color-brand-400: #4d8bc8;
+  --color-brand-500: #2b6cb0;
+  --color-brand-600: #1e4f8a;
+  --color-brand-700: #163e6d;
+  --color-brand-800: #122f52;
+  --color-brand-900: #0c2340;
+  --color-brand-950: #08172c;
 
-  /* 墨 — 文字とグレー */
-  --color-ink-50: #f7f8f9;
-  --color-ink-100: #eceef1;
-  --color-ink-200: #dde1e6;
-  --color-ink-300: #c2c9d2;
-  --color-ink-400: #97a2ae;
-  --color-ink-500: #6b7784;
-  --color-ink-600: #4d5866;
-  --color-ink-700: #37404c;
-  --color-ink-800: #232a33;
-  --color-ink-900: #14181e;
-  --color-ink-950: #0b0e12;
+  --color-ink-50: #f7f8fa;
+  --color-ink-100: #eef0f3;
+  --color-ink-200: #e2e6eb;
+  --color-ink-300: #c8cfd8;
+  --color-ink-400: #8b96a5;
+  --color-ink-500: #667085;
+  --color-ink-600: #4d5666;
+  --color-ink-700: #344054;
+  --color-ink-800: #1d2939;
+  --color-ink-900: #101828;
+  --color-ink-950: #0c111b;
 
-  /* 朱 — 強調・注意 */
   --color-accent-500: #c8102e;
   --color-accent-600: #a80d26;
 
-  /* 担当AIの識別色 (彩度を抑えた実務向けの色) */
-  --color-secretary: #1f5a9c;
-  --color-strategist: #0f6e8c;
-  --color-writer: #1d6f4a;
-  --color-marketer: #a5641a;
+  --color-secretary: #2b6cb0;
+  --color-strategist: #1e4f8a;
+  --color-writer: #1d7a4a;
+  --color-marketer: #c47a12;
   --color-analyst: #35547e;
-  --color-creator: #8c3a63;
+  --color-creator: #6d4ea3;
 
-  --color-good: #1d6f4a;
-  --color-warn: #a5641a;
+  --color-good: #1d7a4a;
+  --color-warn: #c47a12;
   --color-bad: #c8102e;
 
-  --radius-card: 4px;
+  --radius-card: 12px;
 
   --animate-rise: rise 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
@@ -121,13 +114,19 @@
 :root {
   color-scheme: light;
   --surface: #ffffff;
-  --surface-2: #f4f6f8;
-  --surface-3: #eaeef2;
-  --border: #d5dbe1;
-  --border-strong: #b6bfc9;
-  --text: #14181e;
-  --text-muted: #5c6b7a;
-  --link: #0058a3;
+  --surface-2: #f5f7fa;
+  --surface-3: #eef1f5;
+  --border: #e4e8ee;
+  --border-strong: #d0d7e0;
+  --text: #101828;
+  --text-muted: #667085;
+  --link: #1e4f8a;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
+  --sidebar: #0c2340;
+  --sidebar-2: #0a1c33;
+  --sidebar-text: #c5d4e8;
+  --sidebar-muted: #8aa0bb;
+  --sidebar-active: #1e4f8a;
 }
 
 .dark {
@@ -154,7 +153,6 @@ body {
   font-weight: 400;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "palt" 1;
   text-rendering: optimizeLegibility;
 }
 
@@ -176,6 +174,7 @@ a { color: inherit; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 @utility muted {
@@ -190,31 +189,19 @@ a { color: inherit; }
   background: var(--surface-3);
 }
 
-/* 日本のサイトで一般的な「左罫の見出し」 */
+/* ページ・セクション見出し（ダッシュボードと同じサンセリフ） */
 .heading-bar {
-  position: relative;
-  padding-left: 11px;
-  font-weight: 700;
-  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
 }
-.heading-bar::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.28em;
-  bottom: 0.28em;
-  width: 3px;
-  background: var(--color-brand-600);
-  border-radius: 1px;
-}
-.heading-bar.is-accent::before { background: var(--color-accent-500); }
 
-/* セクション見出し (下罫 + 左罫) */
 .section-title {
-  border-bottom: 2px solid var(--color-brand-600);
-  padding-bottom: 7px;
   margin-bottom: 16px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--color-ink-900);
+  line-height: 1.35;
 }
 
 /* パンくず */
@@ -282,12 +269,12 @@ a { color: inherit; }
   color: #fff;
 }
 
-.scroll-thin::-webkit-scrollbar { width: 9px; height: 9px; }
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 0;
+  background: rgb(255 255 255 / 0.16);
+  border-radius: 8px;
 }
-.scroll-thin::-webkit-scrollbar-track { background: var(--surface-3); }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
 
 /* 一覧の順次表示 */
 .stagger > * { animation: var(--animate-rise); }
@@ -310,7 +297,7 @@ a { color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -398,7 +385,7 @@ a { color: inherit; }
 .field-input {
   width: 100%;
   border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text);
   padding: 8px 11px;

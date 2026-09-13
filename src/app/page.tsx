@@ -41,7 +41,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ------------------------------------------------------------ nav -- */}
-      <header className="bg-[var(--surface)] border-b-[3px] border-brand-600 sticky top-0 z-40">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between gap-4">
           <Logo size={30} />
 
@@ -72,12 +72,12 @@ export default function LandingPage() {
       <section className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 items-start">
           <div>
-            <p className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-[12px] font-bold px-2.5 py-1 rounded-[2px]">
+            <p className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-[12px] font-bold px-2.5 py-1 rounded-md">
               <LineIcon size={14} />
               LINEで一言送るだけ
             </p>
 
-            <h1 className="mt-4 font-serif text-[28px] sm:text-[36px] font-bold leading-[1.35] tracking-tight">
+            <h1 className="mt-4 text-[28px] sm:text-[34px] font-semibold leading-[1.4] tracking-tight">
               使うほど会社を理解し、
               <br />
               成果を出す
@@ -90,7 +90,7 @@ export default function LandingPage() {
               サービスではありません。
             </p>
 
-            <div className="mt-6 border border-[var(--border)] bg-[var(--surface-2)] rounded-[4px] p-4">
+            <div className="mt-6 border border-[var(--border)] bg-[var(--surface-2)] rounded-xl p-4">
               <p className="text-[13px] font-bold mb-2.5">AI広報が継続的に判断すること</p>
               <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-[13px]">
                 {[
@@ -125,7 +125,7 @@ export default function LandingPage() {
 
           {/* LINE会話の例 */}
           <div className="card overflow-hidden">
-            <div className="band px-4 py-2.5 flex items-center gap-2">
+            <div className="bg-[var(--sidebar)] text-white px-4 py-2.5 flex items-center gap-2">
               <LineIcon size={16} />
               <span className="text-[13px] font-bold">AI秘書とのやり取り</span>
             </div>
@@ -150,7 +150,7 @@ export default function LandingPage() {
 
       {/* ----------------------------------------------------------- cycle - */}
       <section className="mx-auto max-w-6xl px-5 py-14">
-        <h2 className="section-title text-[20px] flex items-center gap-2">
+        <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2 flex items-center gap-2">
           <span className="text-brand-600">
             <LoopIcon size={20} />
           </span>
@@ -165,8 +165,8 @@ export default function LandingPage() {
 
         <WorkflowCycle />
 
-        <div className="mt-5 card p-4 border-l-[3px] border-l-[var(--color-accent-500)]">
-          <p className="font-serif text-[13px] leading-[1.9]">
+        <div className="mt-5 card p-4">
+          <p className="text-[13px] leading-[1.9] muted">
             AIが毎日活動していても、毎日投稿するとは限りません。発信価値の高い情報がない日は、
             無理に投稿せず、情報収集、過去記事の改善、顧客導線の見直しなどを優先します。
           </p>
@@ -176,7 +176,7 @@ export default function LandingPage() {
       {/* --------------------------------------------------------- funnel -- */}
       <section className="bg-[var(--surface)] border-y border-[var(--border)]">
         <div className="mx-auto max-w-6xl px-5 py-14">
-          <h2 className="section-title text-[20px]">広報目的から逆算した戦略設計</h2>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">広報目的から逆算した戦略設計</h2>
           <p className="muted text-[13px] mb-6 leading-[1.9]">
             AI広報は、投稿数を増やすこと自体を目的にしません。最初に企業が達成したい目的を設定し、
             目的に応じて重視するKPI・媒体・コンテンツ・CTA・投稿頻度を変更します。
@@ -186,7 +186,7 @@ export default function LandingPage() {
             {GOALS.map((g) => (
               <span
                 key={g.key}
-                className="px-3 py-1.5 border border-[var(--border-strong)] rounded-[3px] text-[13px] bg-[var(--surface-2)]"
+                className="px-3 py-1.5 border border-[var(--border-strong)] rounded-lg text-[13px] bg-[var(--surface-2)]"
               >
                 {g.label}
               </span>
@@ -199,18 +199,18 @@ export default function LandingPage() {
 
       {/* ------------------------------------------------------- features -- */}
       <section id="features" className="mx-auto max-w-6xl px-5 py-14">
-        <h2 className="section-title text-[20px]">主な機能</h2>
+        <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-6">主な機能</h2>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
             <div key={f.title} className="card p-4">
-              <h3 className="heading-bar text-[14px] mb-2">{f.title}</h3>
+              <h3 className="text-[15px] font-semibold mb-2">{f.title}</h3>
               <p className="muted text-[12.5px] leading-relaxed">{f.body}</p>
             </div>
           ))}
         </div>
         <div className="mt-5 card p-5">
-          <h3 className="heading-bar is-accent text-[14px] mb-2 flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold mb-2 flex items-center gap-2">
             <span className="text-[#1d6f4a]">
               <ShieldCheckIcon size={18} />
             </span>
@@ -225,7 +225,7 @@ export default function LandingPage() {
             {RISK_CHECKPOINTS.map((c) => (
               <span
                 key={c}
-                className="px-2 py-1 border border-[var(--border)] bg-[var(--surface-2)] rounded-[2px] text-[11.5px]"
+                className="px-2 py-1 border border-[var(--border)] bg-[var(--surface-2)] rounded-md text-[11.5px]"
               >
                 {c}
               </span>
@@ -237,7 +237,7 @@ export default function LandingPage() {
       {/* -------------------------------------------------------- pricing -- */}
       <section id="pricing" className="bg-[var(--surface)] border-t border-[var(--border)]">
         <div className="mx-auto max-w-6xl px-5 py-14">
-          <h2 className="section-title text-[20px]">料金</h2>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900 mb-2">料金</h2>
           <p className="muted text-[13px] mb-6">
             料金プランは一つだけです。対話頻度、投稿頻度、使用媒体は自由に設定できます。
           </p>
@@ -282,7 +282,7 @@ export default function LandingPage() {
 
           <div className="grid lg:grid-cols-2 gap-5">
             <div className="card p-5">
-              <h3 className="heading-bar text-[14px] mb-3">初期費用に含まれるもの</h3>
+              <h3 className="text-[15px] font-semibold mb-3">初期費用に含まれるもの</h3>
               <ul className="grid sm:grid-cols-2 gap-x-5 gap-y-1">
                 {SETUP_INCLUDES.map((s) => (
                   <li key={s} className="text-[12.5px] flex items-start gap-1.5">
@@ -294,7 +294,7 @@ export default function LandingPage() {
             </div>
 
             <div className="card p-5">
-              <h3 className="heading-bar text-[14px] mb-3">月額料金に含まれるもの</h3>
+              <h3 className="text-[15px] font-semibold mb-3">月額料金に含まれるもの</h3>
               <ul className="grid sm:grid-cols-2 gap-x-5 gap-y-1">
                 {[
                   "6人の専門AIによる広報活動一式",
@@ -342,7 +342,7 @@ export default function LandingPage() {
             <Link href="/signup" className="btn btn-primary h-12 px-10 text-[15px]">
               <span>AI広報部をはじめる</span>
             </Link>
-            <p className="mt-3 font-serif text-[12.5px] muted">
+            <p className="mt-3 text-[12.5px] muted">
               人を採用することなく、企業が本格的な広報部を持つためのAIエージェントサービスです。
             </p>
           </div>
@@ -353,8 +353,8 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-5 py-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <LogoMark size={26} />
-            <span className="font-serif text-[13px] text-white font-bold">AI広報</span>
-            <span className="font-serif text-[11.5px] font-medium">成果を出すAI広報部</span>
+            <span className="text-[13px] text-white font-semibold">AI広報</span>
+            <span className="text-[11.5px] font-medium">成果を出すAI広報部</span>
           </div>
           <div className="flex gap-5 text-[12.5px]">
             <Link href="/login" className="hover:text-white">

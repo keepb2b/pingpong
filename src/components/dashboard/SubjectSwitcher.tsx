@@ -13,9 +13,11 @@ type Subject = { id: string; name: string; type: string; is_primary: boolean };
 export function SubjectSwitcher({
   subjects,
   activeId,
+  tone = "light",
 }: {
   subjects: Subject[];
   activeId: string | null;
+  tone?: "light" | "dark";
 }) {
   const [open, setOpen] = useState(false);
   const active = subjects.find((s) => s.id === activeId) ?? subjects[0];
@@ -24,7 +26,11 @@ export function SubjectSwitcher({
     return (
       <Link
         href="/dashboard/settings"
-        className="block px-3 py-2 rounded-[4px] border border-dashed border-[var(--border)] text-xs muted hover:text-[var(--text)] text-center"
+        className={`block px-3 py-2 rounded-lg border border-dashed text-xs text-center ${
+          tone === "dark"
+            ? "border-white/20 text-[var(--sidebar-muted)] hover:text-white"
+            : "border-[var(--border)] muted hover:text-[var(--text)]"
+        }`}
       >
         広報対象を登録する
       </Link>
@@ -35,14 +41,18 @@ export function SubjectSwitcher({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-[4px] border border-[var(--border)] hover:bg-[var(--surface-3)] transition-colors text-left"
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-left ${
+          tone === "dark"
+            ? "border-white/10 bg-white/5 hover:bg-white/10 text-white"
+            : "border-[var(--border)] hover:bg-[var(--surface-3)]"
+        }`}
       >
-        <span className="h-6 w-6 shrink-0 rounded-[3px] bg-brand-600 text-white text-[11px] font-bold grid place-items-center">
+        <span className="h-6 w-6 shrink-0 rounded-lg bg-brand-600 text-white text-[11px] font-bold grid place-items-center">
           {active.name.slice(0, 1)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[13px] font-medium truncate">{active.name}</span>
-          <span className="block text-[10px] muted">
+          <span className={`block text-[10px] ${tone === "dark" ? "text-[var(--sidebar-muted)]" : "muted"}`}>
             {SUBJECT_TYPE_LABEL[active.type] ?? active.type}
           </span>
         </span>
@@ -64,7 +74,7 @@ export function SubjectSwitcher({
                   s.id === active.id ? "bg-brand-50 dark:bg-brand-900/25" : ""
                 }`}
               >
-                <span className="h-5 w-5 shrink-0 rounded-[3px] bg-[var(--surface-3)] text-[10px] font-bold grid place-items-center">
+                <span className="h-5 w-5 shrink-0 rounded-lg bg-[var(--surface-3)] text-[10px] font-bold grid place-items-center">
                   {s.name.slice(0, 1)}
                 </span>
                 <span className="truncate">{s.name}</span>

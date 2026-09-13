@@ -30,6 +30,10 @@
   stroke-width: 1.5;
 }
 
+.slice path {
+  transition: opacity 0.7s ease;
+}
+
 .caption {
   position: absolute;
   width: 17.5cqi;

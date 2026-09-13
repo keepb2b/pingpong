@@ -63,7 +63,7 @@ export function AgentsOrbit() {
           AI PR TEAM
           <span className="h-px w-10 bg-[#93c5fd]" />
         </p>
-        <h2 className="mt-4 font-serif text-[26px] sm:text-[32px] font-bold leading-[1.45] text-[#0f2a5c] tracking-tight">
+        <h2 className="mt-4 text-[26px] sm:text-[32px] font-semibold leading-[1.4] text-ink-900 tracking-tight">
           6人の専門AIが、ひとつの広報チームになる。
         </h2>
         <p className="mt-4 text-[13px] sm:text-[14px] leading-[1.95] text-[#5b6b82]">
@@ -111,7 +111,7 @@ export function AgentsOrbit() {
         </svg>
 
         <div className="absolute left-1/2 top-1/2 z-[2] w-[220px] -translate-x-1/2 -translate-y-1/2 text-center">
-          <p className="font-serif text-[28px] font-bold text-[#0f2a5c] tracking-tight">AI広報部</p>
+          <p className="text-[28px] font-semibold text-ink-900 tracking-tight">AI広報部</p>
           <p className="mt-2 text-[12px] leading-[1.85] text-[#5b6b82]">
             6人の専門AIがチームとなって、広報活動を情報収集から戦略・制作・投稿・分析まで支援します。
           </p>
@@ -161,7 +161,7 @@ function ModuleCopy({
         {m.label}
         {align === "right" && <AgentIcon agent={m.key} size={14} />}
       </p>
-      <h3 className="mt-1 font-serif text-[20px] font-bold text-[#0f2a5c] leading-snug">{m.title}</h3>
+      <h3 className="mt-1 text-[20px] font-semibold text-ink-900 leading-snug">{m.title}</h3>
       <p className="mt-1.5 text-[12px] leading-[1.8] text-[#5b6b82]">{m.body}</p>
     </div>
   );

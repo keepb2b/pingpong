@@ -8,6 +8,7 @@ import { CONTENT_TYPES, GOALS, STATUS_LABEL } from "@/lib/constants";
 const FILTERS = [
   { key: "", label: "すべて" },
   { key: "pending_approval", label: STATUS_LABEL.pending_approval },
+  { key: "fact_check", label: STATUS_LABEL.fact_check },
   { key: "approved", label: STATUS_LABEL.approved },
   { key: "scheduled", label: STATUS_LABEL.scheduled },
   { key: "published", label: STATUS_LABEL.published },
@@ -50,7 +51,7 @@ export function ContentToolbar({
                 onClick={() =>
                   router.push(f.key ? `/dashboard/content?status=${f.key}` : "/dashboard/content")
                 }
-                className={`px-3 py-1.5 rounded-[3px] text-xs font-medium border transition-colors
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors
                   ${on ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200" : "border-[var(--border)] muted hover:border-brand-300"}`}
               >
                 {f.label}

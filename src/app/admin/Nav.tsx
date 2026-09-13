@@ -2,32 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserIcon, CardIcon, ChartIcon } from "@/components/icons/NavIcons";
+import { Users, CreditCard, BarChart3 } from "lucide-react";
+
+const ICON = { size: 16, strokeWidth: 1.75 } as const;
 
 const TABS = [
-  { href: "/admin", label: "ユーザー管理", icon: <UserIcon /> },
-  { href: "/admin/payments", label: "決済履歴", icon: <CardIcon /> },
-  { href: "/admin/activity", label: "利用状況", icon: <ChartIcon /> },
+  { href: "/admin", label: "ユーザー管理", icon: <Users {...ICON} /> },
+  { href: "/admin/payments", label: "決済履歴", icon: <CreditCard {...ICON} /> },
+  { href: "/admin/activity", label: "利用状況", icon: <BarChart3 {...ICON} /> },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-0.5 -mb-px overflow-x-auto scroll-thin">
+    <nav className="flex gap-1 px-2 pb-2 overflow-x-auto scroll-thin">
       {TABS.map((t) => {
         const active = t.href === "/admin" ? pathname === "/admin" : pathname.startsWith(t.href);
         return (
           <Link
             key={t.href}
             href={t.href}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap
-              border-b-[3px] transition-colors
-              ${
-                active
-                  ? "border-b-[var(--color-accent-500)] text-white"
-                  : "border-b-transparent text-white/60 hover:text-white"
-              }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors
+              ${active ? "bg-[var(--sidebar-active)] text-white" : "text-[var(--sidebar-text)] hover:bg-white/10 hover:text-white"}`}
           >
             {t.icon}
             {t.label}

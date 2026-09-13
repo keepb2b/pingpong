@@ -91,12 +91,28 @@ export function SecretaryChatDemo() {
   );
 }
 
+function Avatar({ side }: { side: "ai" | "me" }) {
+  const isAi = side === "ai";
+  return (
+    <img
+      src={isAi ? "/images/chat/secretary.png" : "/images/chat/user.png"}
+      alt={isAi ? "AI秘書" : "担当者"}
+      width={32}
+      height={32}
+      className="h-8 w-8 shrink-0 rounded-full object-cover bg-[var(--surface)] ring-1 ring-[var(--border)]"
+      decoding="async"
+      suppressHydrationWarning
+    />
+  );
+}
+
 function Bubble({ children, side }: { children: React.ReactNode; side: "ai" | "me" }) {
   const isAi = side === "ai";
   return (
-    <div className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
+    <div className={`flex items-end gap-2 ${isAi ? "justify-start" : "justify-end"}`}>
+      {isAi ? <Avatar side="ai" /> : null}
       <div
-        className={`max-w-[85%] px-3 py-2 text-[12.5px] leading-relaxed rounded-[4px] border chat-bubble-in ${
+        className={`max-w-[72%] px-3 py-2 text-[12.5px] leading-relaxed rounded-xl border chat-bubble-in ${
           isAi
             ? "bg-[var(--surface)] border-[var(--border)] chat-bubble-in-left"
             : "bg-[#e4efe0] border-[#bcd9b3] dark:bg-[#1e3a1c] dark:border-[#2f5c2b] chat-bubble-in-right"
@@ -104,14 +120,16 @@ function Bubble({ children, side }: { children: React.ReactNode; side: "ai" | "m
       >
         {children}
       </div>
+      {isAi ? null : <Avatar side="me" />}
     </div>
   );
 }
 
 function TypingBubble() {
   return (
-    <div className="flex justify-start">
-      <div className="px-3 py-2.5 rounded-[4px] border bg-[var(--surface)] border-[var(--border)] chat-bubble-in chat-bubble-in-left">
+    <div className="flex items-end gap-2 justify-start">
+      <Avatar side="ai" />
+      <div className="px-3 py-2.5 rounded-xl border bg-[var(--surface)] border-[var(--border)] chat-bubble-in chat-bubble-in-left">
         <span className="inline-flex items-center gap-1 h-3.5" aria-hidden>
           <span className="chat-typing-dot" />
           <span className="chat-typing-dot" style={{ animationDelay: "0.16s" }} />

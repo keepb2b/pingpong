@@ -1,15 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  Megaphone,
+  MousePointerClick,
+  CircleDollarSign,
+  ClipboardCheck,
+  FileText,
+  CalendarDays,
+  LineChart,
+  Inbox,
+} from "lucide-react";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
 import { Card, CardHeader, Badge, StatTile, EmptyState } from "@/components/ui";
 import { statusTone, riskTone } from "@/lib/badge-tone";
 import { PageHeader, AgentButton } from "@/components/dashboard/shared";
+import { ProposalActions } from "@/components/dashboard/ProposalActions";
 import { formatDateTime } from "@/lib/format-date";
 import { ScoreRing } from "@/components/charts";
-import { AgentIcon, LineIcon, LoopIcon } from "@/components/icons/AgentIcons";
-import { DocumentIcon } from "@/components/icons/NavIcons";
 import {
-  AGENTS,
   CHANNEL_LABEL,
   CONTENT_TYPE_LABEL,
   GOAL_LABEL,
@@ -20,6 +28,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function momDelta(current: number, previous: number): number | undefined {
+  if (current === 0 && previous === 0) return undefined;
+  if (previous === 0) return current > 0 ? 100 : undefined;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
 export default async function DashboardHome() {
   const ctx = await getOrgContext();
   if (!ctx) redirect("/onboarding");
@@ -27,7 +41,9 @@ export default async function DashboardHome() {
 
   const sb = await supabaseServer();
   const subjectId = ctx.subjectId;
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
   const [
     { data: pending },
@@ -36,10 +52,10 @@ export default async function DashboardHome() {
     { data: score },
     { data: kpis },
     { data: conversions },
+    { data: prevConversions },
     { data: signals },
     { data: intake },
     { data: lineAccounts },
-    { data: latestNote },
   ] = await Promise.all([
     sb
       .from("content_items")
@@ -75,6 +91,12 @@ export default async function DashboardHome() {
       .eq("subject_id", subjectId)
       .gte("occurred_at", monthStart),
     sb
+      .from("conversions")
+      .select("type, amount")
+      .eq("subject_id", subjectId)
+      .gte("occurred_at", prevStart)
+      .lt("occurred_at", monthStart),
+    sb
       .from("market_signals")
       .select("id, title, kind, importance, detected_at")
       .eq("subject_id", subjectId)
@@ -89,25 +111,30 @@ export default async function DashboardHome() {
       .order("created_at", { ascending: false })
       .limit(5),
     sb.from("line_accounts").select("id").eq("org_id", ctx.orgId).limit(1),
-    sb
-      .from("notifications")
-      .select("title, body, agent, created_at")
-      .eq("subject_id", subjectId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ]);
 
+  const proposalIds = (proposals ?? []).map((p) => p.id);
+  const { data: proposalContents } = proposalIds.length
+    ? await sb.from("content_items").select("id, proposal_id, status").in("proposal_id", proposalIds)
+    : { data: [] as Array<{ id: string; proposal_id: string; status: string }> };
+  const contentByProposal = new Map(
+    (proposalContents ?? []).map((c) => [c.proposal_id, { id: c.id, status: c.status }]),
+  );
+
   const outcomes = (conversions ?? []).filter((c) => OUTCOME_CONVERSIONS.includes(c.type));
+  const prevOutcomes = (prevConversions ?? []).filter((c) => OUTCOME_CONVERSIONS.includes(c.type));
   const revenue = (conversions ?? []).reduce((a, c) => a + Number(c.amount ?? 0), 0);
+  const prevRevenue = (prevConversions ?? []).reduce((a, c) => a + Number(c.amount ?? 0), 0);
   const clicks = (conversions ?? []).filter((c) => c.type === "cta_click").length;
+  const prevClicks = (prevConversions ?? []).filter((c) => c.type === "cta_click").length;
   const lineConnected = (lineAccounts ?? []).length > 0;
+  const pendingCount = pending?.length ?? 0;
 
   return (
     <>
       <PageHeader
         title="AI広報部ホーム"
-        description="AI広報部が本日判断した内容と、承認をお待ちしている案件です。"
+        description="収集・分析した情報をもとに、最適な広報活動を確認し、次の判断と承認を行います。"
         action={
           <>
             <AgentButton
@@ -126,73 +153,63 @@ export default async function DashboardHome() {
       />
 
       {!lineConnected && (
-        <div className="card p-4 mb-5 border-brand-300 bg-brand-50/60 dark:bg-brand-900/20">
-          <div className="flex items-start gap-3">
-            <span className="text-[color:var(--color-writer)] mt-0.5 shrink-0">
-              <LineIcon size={20} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium">LINEを連携すると、AI秘書からのヒアリングが始まります</p>
-              <p className="muted text-xs mt-1">
-                設定画面で連携コードを発行し、LINEのトークに送信してください。以降は出来事を送るだけで広報が回ります。
-              </p>
-              <Link
-                href="/dashboard/settings#line"
-                className="inline-block mt-2 text-xs text-brand-600 font-medium hover:underline"
-              >
-                LINE連携の設定へ →
-              </Link>
-            </div>
-          </div>
+        <div className="card p-4 mb-6">
+          <p className="text-sm font-medium">LINEを連携すると、AI秘書からのヒアリングが始まります</p>
+          <p className="muted text-[13px] mt-1">
+            設定画面で連携コードを発行し、公式アカウントとの1対1トークに送信してください。
+          </p>
+          <Link href="/dashboard/settings#line" className="inline-block mt-2 text-[13px] text-brand-700 font-medium hover:underline">
+            LINE連携の設定へ
+          </Link>
         </div>
       )}
 
-      {/* -------------------------------------------------------- 成果指標 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         <StatTile
-          label="今月の成果 (問い合わせ等)"
+          label="今月の成果（問い合わせ等）"
           value={outcomes.length}
           unit="件"
-          accent="var(--color-analyst)"
-          hint="問い合わせ・予約・購入・成約など"
+          hint="問い合わせ・予約・購入・成約"
+          delta={momDelta(outcomes.length, prevOutcomes.length)}
+          accent="var(--color-brand-600)"
+          icon={<Megaphone size={18} strokeWidth={1.75} />}
         />
         <StatTile
           label="CTAクリック"
           value={clicks}
           unit="回"
-          accent="var(--color-marketer)"
           hint="専用リンク経由"
+          delta={momDelta(clicks, prevClicks)}
+          accent="var(--color-brand-500)"
+          icon={<MousePointerClick size={18} strokeWidth={1.75} />}
         />
         <StatTile
           label="成約金額"
           value={`¥${revenue.toLocaleString("ja-JP")}`}
-          accent="var(--color-writer)"
           hint="今月の記録分"
+          delta={momDelta(revenue, prevRevenue)}
+          accent="var(--color-good)"
+          icon={<CircleDollarSign size={18} strokeWidth={1.75} />}
         />
         <StatTile
           label="承認待ち"
-          value={pending?.length ?? 0}
+          value={pendingCount}
           unit="件"
-          accent="var(--color-secretary)"
-          hint="LINEからも承認できます"
+          hint="確認して承認 / 修正できます"
+          accent="var(--color-warn)"
+          icon={<ClipboardCheck size={18} strokeWidth={1.75} />}
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        {/* ------------------------------------------------------ 左カラム */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* 承認待ち */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader
               title="承認をお待ちしています"
-              subtitle="発信理由・目的・CTA・期待効果を確認して、承認 / 修正 / 保留 / 投稿しない を選べます。"
-              icon={
-                <span className="text-[color:var(--color-secretary)]">
-                  <AgentIcon agent="secretary" size={30} />
-                </span>
-              }
+              subtitle="発信理由・目的・CTA・期待効果を確認し、承認 / 修正 / 保留を選べます。"
+              icon={<ClipboardCheck size={16} strokeWidth={1.75} />}
               action={
-                <Link href="/dashboard/content" className="text-xs text-brand-600 hover:underline">
+                <Link href="/dashboard/content?status=pending_approval" className="text-[13px] text-brand-700 font-medium hover:underline">
                   すべて見る
                 </Link>
               }
@@ -200,20 +217,20 @@ export default async function DashboardHome() {
 
             {!pending?.length ? (
               <EmptyState
-                icon={<DocumentIcon size={28} />}
-                title="承認待ちの広報案はありません"
-                body="AI秘書が新しい広報材料を集めると、ここに提案が並びます。"
+                icon={<FileText size={28} strokeWidth={1.5} />}
+                title="現在、承認待ちの案件はありません"
+                body="新しい広報材料が登録され、制作が進むと、ここに確認依頼が表示されます。"
               />
             ) : (
-              <ul className="space-y-2 stagger">
+              <ul className="space-y-3">
                 {pending.map((c) => (
                   <li key={c.id}>
                     <Link
                       href={`/dashboard/content/${c.id}`}
-                      className="block p-3.5 rounded-[4px] border border-[var(--border)] hover:border-brand-300 hover:bg-[var(--surface-2)] transition-colors"
+                      className="block p-4 rounded-xl border border-[var(--border)] hover:border-brand-200 hover:bg-brand-50/40 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-medium leading-snug line-clamp-2">{c.title}</p>
+                        <p className="text-[14px] font-medium leading-snug line-clamp-2">{c.title}</p>
                         <div className="flex gap-1.5 shrink-0">
                           <Badge tone={statusTone(c.status)}>{STATUS_LABEL[c.status] ?? c.status}</Badge>
                           {c.risk !== "none" && (
@@ -222,9 +239,9 @@ export default async function DashboardHome() {
                         </div>
                       </div>
                       {c.summary && (
-                        <p className="muted text-xs mt-1.5 line-clamp-2 leading-relaxed">{c.summary}</p>
+                        <p className="muted text-[13px] mt-2 line-clamp-2 leading-relaxed">{c.summary}</p>
                       )}
-                      <div className="flex items-center gap-2 mt-2 text-[11px] muted">
+                      <div className="flex items-center gap-2 mt-3 text-[12px] muted">
                         <span>{CONTENT_TYPE_LABEL[c.type as keyof typeof CONTENT_TYPE_LABEL] ?? c.type}</span>
                         {c.goal && <span>· {GOAL_LABEL[c.goal as keyof typeof GOAL_LABEL]}</span>}
                         <span className="ml-auto tabular-nums">{formatDateTime(c.created_at)}</span>
@@ -236,60 +253,60 @@ export default async function DashboardHome() {
             )}
           </Card>
 
-          {/* 本日の提案 */}
           <Card>
             <CardHeader
               title="AIストラテジストの提案"
-              subtitle="「なぜ今日これを発信するか」の理由つきで提示されます。"
-              icon={
-                <span className="text-[color:var(--color-strategist)]">
-                  <AgentIcon agent="strategist" size={30} />
-                </span>
-              }
+              subtitle="なぜ今日この発信が必要かを、根拠と期待効果つきで示します。"
+              icon={<LineChart size={16} strokeWidth={1.75} />}
             />
 
             {!proposals?.length ? (
               <EmptyState
                 title="まだ提案がありません"
-                body="「今日の広報活動を実行」を押すと、AIが本日発信すべきかを判断します。"
+                body="「今日の広報活動を実行」を押すと、本日発信すべきかを判断します。"
               />
             ) : (
-              <ul className="space-y-2.5 stagger">
-                {proposals.map((p) => (
-                  <li key={p.id} className="p-3.5 rounded-[4px] border border-[var(--border)]">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm font-medium">{p.theme}</p>
-                      <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
-                    </div>
-                    <p className="muted text-xs mt-1.5 leading-relaxed">{p.reason}</p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-                      {p.goal && <Badge tone="brand">{GOAL_LABEL[p.goal as keyof typeof GOAL_LABEL]}</Badge>}
-                      {(Array.isArray(p.channels) ? p.channels : []).map((ch: string) => (
-                        <Badge key={ch}>{CHANNEL_LABEL[ch as keyof typeof CHANNEL_LABEL] ?? ch}</Badge>
-                      ))}
-                      {p.cta && <span className="text-[11px] muted">CTA: {p.cta}</span>}
-                    </div>
-                    {p.expected_effect && (
-                      <p className="text-[11px] text-emerald-600 mt-2">期待効果: {p.expected_effect}</p>
-                    )}
-                  </li>
-                ))}
+              <ul className="space-y-4">
+                {proposals.map((p) => {
+                  const linked = contentByProposal.get(p.id);
+                  const channels = Array.isArray(p.channels) ? p.channels : [];
+                  return (
+                    <li key={p.id} className="p-4 rounded-xl border border-[var(--border)]">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-[15px] font-semibold leading-snug">{p.theme}</p>
+                        <Badge tone={statusTone(p.status)}>{STATUS_LABEL[p.status] ?? p.status}</Badge>
+                      </div>
+                      <p className="text-[13px] mt-2 leading-relaxed text-ink-700">{p.reason}</p>
+                      {p.expected_effect && (
+                        <p className="text-[13px] mt-2 text-ink-700">
+                          <span className="font-medium text-ink-800">期待される効果：</span>
+                          {p.expected_effect}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                        {p.goal && (
+                          <Badge tone="brand">{GOAL_LABEL[p.goal as keyof typeof GOAL_LABEL]}</Badge>
+                        )}
+                        {channels.map((ch: string) => (
+                          <Badge key={ch}>{CHANNEL_LABEL[ch as keyof typeof CHANNEL_LABEL] ?? ch}</Badge>
+                        ))}
+                      </div>
+                      {p.cta && <p className="text-[12px] muted mt-2">CTA：{p.cta}</p>}
+                      <ProposalActions contentId={linked?.id} status={linked?.status ?? p.status} />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>
 
-          {/* 収集した広報材料 */}
           <Card>
             <CardHeader
               title="収集した広報材料"
-              subtitle="LINEでのヒアリングから集まった、まだ発信に使っていない情報です。"
-              icon={
-                <span className="text-[color:var(--color-secretary)]">
-                  <LineIcon size={26} />
-                </span>
-              }
+              subtitle="まだ発信に使っていない、ヒアリングから集まった情報です。"
+              icon={<Inbox size={16} strokeWidth={1.75} />}
               action={
-                <Link href="/dashboard/intake" className="text-xs text-brand-600 hover:underline">
+                <Link href="/dashboard/intake" className="text-[13px] text-brand-700 font-medium hover:underline">
                   すべて見る
                 </Link>
               }
@@ -297,16 +314,14 @@ export default async function DashboardHome() {
             {!intake?.length ? (
               <EmptyState
                 title="未使用の広報材料はありません"
-                body="LINEに出来事を送ると、AI秘書が1問ずつ聞き取って材料に変えます。"
+                body="出来事をLINEに送ると、AI秘書が聞き取って材料に変えます。"
               />
             ) : (
               <ul className="divide-y divide-[var(--border)]">
                 {intake.map((i) => (
-                  <li key={i.id} className="py-2.5 flex items-center gap-3">
-                    <span className="text-sm truncate flex-1">{i.title}</span>
-                    <span className="text-[11px] muted tabular-nums shrink-0">
-                      ニュース性 {i.newsworthiness}
-                    </span>
+                  <li key={i.id} className="py-3 flex items-center gap-3">
+                    <span className="text-[14px] truncate flex-1">{i.title}</span>
+                    <span className="text-[12px] muted tabular-nums shrink-0">ニュース性 {i.newsworthiness}</span>
                   </li>
                 ))}
               </ul>
@@ -314,69 +329,46 @@ export default async function DashboardHome() {
           </Card>
         </div>
 
-        {/* ------------------------------------------------------ 右カラム */}
-        <div className="space-y-5">
-          {/* スコア */}
+        <div className="space-y-6">
           <Card>
             <CardHeader
               title="AI広報スコア"
               subtitle={score?.period ? `${score.period} 時点` : "月末に算出されます"}
-              icon={
-                <span className="text-[color:var(--color-analyst)]">
-                  <AgentIcon agent="analyst" size={28} />
-                </span>
-              }
+              icon={<LineChart size={16} strokeWidth={1.75} />}
             />
             <div className="flex flex-col items-center">
               <ScoreRing value={score?.total ?? 0} />
-              {(score?.improvements as Array<{ action?: string }> | null)?.length ? (
-                <ul className="mt-4 space-y-1.5 w-full">
-                  {(score!.improvements as Array<{ action?: string }>).slice(0, 3).map((im, i) => (
-                    <li key={i} className="text-xs flex items-start gap-2">
-                      <span className="text-amber-600 mt-0.5 shrink-0">→</span>
-                      <span className="leading-relaxed">{im.action}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted text-xs mt-3 text-center leading-relaxed">
-                  スコアは10観点で算出し、点数の根拠と改善方法まで表示します。
-                </p>
-              )}
-              <Link
-                href="/dashboard/score"
-                className="mt-4 text-xs text-brand-600 hover:underline"
-              >
-                内訳と改善提案を見る →
+              <p className="muted text-[13px] mt-3 text-center leading-relaxed">
+                10観点で算出し、点数の根拠と改善方法まで表示します。
+              </p>
+              <Link href="/dashboard/score" className="mt-3 text-[13px] text-brand-700 font-medium hover:underline">
+                内訳と改善提案を見る
               </Link>
             </div>
           </Card>
 
-          {/* KPI */}
           <Card>
             <CardHeader title="KPI進捗" subtitle="広報目的から逆算した指標" />
             {!kpis?.length ? (
-              <p className="muted text-xs">
-                KPIが未設定です。設定画面から目標を登録してください。
-              </p>
+              <p className="muted text-[13px]">KPIが未設定です。設定画面から目標を登録してください。</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {kpis.map((k) => {
                   const pct = k.target_value
                     ? Math.min(100, Math.round((k.current_value / k.target_value) * 100))
                     : 0;
                   return (
                     <li key={k.name}>
-                      <div className="flex items-baseline justify-between gap-2 mb-1">
-                        <span className="text-xs font-medium truncate">{k.name}</span>
-                        <span className="text-xs tabular-nums muted shrink-0">
+                      <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                        <span className="text-[13px] font-medium truncate">{k.name}</span>
+                        <span className="text-[12px] tabular-nums muted shrink-0">
                           {k.current_value}/{k.target_value}
                           {k.unit ?? ""}
                         </span>
                       </div>
                       <div className="h-1.5 rounded-full bg-[var(--surface-3)] overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-[width] duration-700"
+                          className="h-full rounded-full"
                           style={{
                             width: `${pct}%`,
                             background: pct >= 80 ? "var(--color-good)" : "var(--color-brand-500)",
@@ -390,56 +382,50 @@ export default async function DashboardHome() {
             )}
           </Card>
 
-          {/* 投稿予定 */}
           <Card>
             <CardHeader
               title="投稿予定"
-              icon={
-                <span className="text-[color:var(--color-marketer)]">
-                  <AgentIcon agent="marketer" size={28} />
-                </span>
-              }
+              icon={<CalendarDays size={16} strokeWidth={1.75} />}
               action={
-                <Link href="/dashboard/calendar" className="text-xs text-brand-600 hover:underline">
+                <Link href="/dashboard/calendar" className="text-[13px] text-brand-700 font-medium hover:underline">
                   一覧
                 </Link>
               }
             />
             {!scheduled?.length ? (
-              <p className="muted text-xs">予約されている投稿はありません。</p>
+              <p className="muted text-[13px]">予約されている投稿はありません。</p>
             ) : (
-              <ul className="space-y-2.5">
+              <ul className="space-y-3">
                 {scheduled.map((p) => (
-                  <li key={p.id} className="text-xs">
+                  <li key={p.id} className="text-[13px]">
                     <div className="flex items-center gap-2">
                       <Badge tone="info">
                         {CHANNEL_LABEL[p.channel as keyof typeof CHANNEL_LABEL] ?? p.channel}
                       </Badge>
-                      <span className="muted tabular-nums">{formatDateTime(p.scheduled_for)}</span>
+                      <span className="muted tabular-nums text-[12px]">{formatDateTime(p.scheduled_for)}</span>
                     </div>
-                    <p className="mt-1 line-clamp-2 leading-relaxed">{p.body}</p>
+                    <p className="mt-1.5 line-clamp-2 leading-relaxed">{p.body}</p>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
 
-          {/* 市場シグナル */}
           <Card>
             <CardHeader
               title="市場・競合の変化"
               action={
-                <Link href="/dashboard/monitoring" className="text-xs text-brand-600 hover:underline">
+                <Link href="/dashboard/monitoring" className="text-[13px] text-brand-700 font-medium hover:underline">
                   一覧
                 </Link>
               }
             />
             {!signals?.length ? (
-              <p className="muted text-xs">検知された変化はありません。</p>
+              <p className="muted text-[13px]">検知された変化はありません。</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {signals.map((s) => (
-                  <li key={s.id} className="text-xs flex items-start gap-2">
+                  <li key={s.id} className="text-[13px] flex items-start gap-2">
                     <span
                       className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
                       style={{
@@ -455,34 +441,6 @@ export default async function DashboardHome() {
                   </li>
                 ))}
               </ul>
-            )}
-          </Card>
-
-          {/* AI広報部の稼働 */}
-          <Card>
-            <CardHeader
-              title="AI広報部の稼働状況"
-              icon={
-                <span className="text-brand-600">
-                  <LoopIcon size={24} />
-                </span>
-              }
-            />
-            <ul className="space-y-2">
-              {AGENTS.map((a) => (
-                <li key={a.key} className="flex items-center gap-2.5">
-                  <span style={{ color: a.color }} className="shrink-0">
-                    <AgentIcon agent={a.key} size={22} />
-                  </span>
-                  <span className="text-xs font-medium flex-1">{a.name}</span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" title="稼働中" />
-                </li>
-              ))}
-            </ul>
-            {latestNote && (
-              <p className="muted text-[11px] mt-4 pt-3 border-t border-[var(--border)] leading-relaxed">
-                最新: {latestNote.title}
-              </p>
             )}
           </Card>
         </div>

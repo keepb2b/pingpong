@@ -20,17 +20,17 @@ export function PageHeader({
   const meta = agent ? AGENTS.find((a) => a.key === agent) : null;
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
       <div className="flex items-start gap-3 min-w-0">
         {meta && (
-          <span style={{ color: meta.color }} className="shrink-0">
-            <AgentIcon agent={meta.key} size={38} />
+          <span className="h-10 w-10 rounded-lg bg-brand-50 text-brand-700 grid place-items-center shrink-0">
+            <AgentIcon agent={meta.key} size={20} />
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink-900">{title}</h1>
           {description && (
-            <p className="muted text-xs mt-1 leading-relaxed max-w-2xl">{description}</p>
+            <p className="muted text-[13px] sm:text-[14px] mt-1.5 leading-relaxed max-w-2xl">{description}</p>
           )}
           {meta && (
             <p className="text-[11px] mt-1.5" style={{ color: meta.color }}>

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { listAllUsers, summarizeUsers } from "@/lib/admin";
 import { Card, CardHeader, StatTile, Badge } from "@/components/ui";
+import { PageHeader } from "@/components/dashboard/shared";
 import { TrendChart, ChannelBars } from "@/components/charts";
 import { AGENT_LABEL, type AgentKey } from "@/lib/constants";
 
@@ -62,10 +63,10 @@ export default async function AdminActivityPage() {
 
   return (
     <>
-      <h1 className="section-title text-[18px]">利用状況</h1>
-      <p className="muted text-[12.5px] -mt-3 mb-5">
-        直近30日間の、プラットフォーム全体の稼働状況です。
-      </p>
+      <PageHeader
+        title="利用状況"
+        description="直近30日間の、プラットフォーム全体の稼働状況です。"
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <StatTile label="AI実行回数" value={allRuns.length} unit="回" accent="var(--color-brand-600)" />
