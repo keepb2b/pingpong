@@ -87,7 +87,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
 
         <div className="p-3 border-t border-white/10">
-          <p className="text-[11px] text-[var(--sidebar-muted)] truncate">{org?.name ?? ctx.orgName}</p>
+          <p className="text-[11px] font-medium text-white/90 truncate">{org?.name ?? ctx.orgName}</p>
         </div>
       </aside>
 

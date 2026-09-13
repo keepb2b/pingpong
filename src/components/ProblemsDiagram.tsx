@@ -132,22 +132,22 @@ export function ProblemsDiagram() {
               <span className={styles.ripple} />
               <span className={styles.ripple} />
             </div>
-            <div
-              className="relative h-full w-full rounded-full grid place-items-center text-center px-5"
-              style={{
-                background: "radial-gradient(circle at 38% 32%, var(--color-brand-400) 0%, var(--color-brand-600) 58%, var(--color-brand-800) 100%)",
-                boxShadow:
-                  "0 0 0 8px rgb(31 90 156 / 0.16), 0 0 0 20px rgb(31 90 156 / 0.10), 0 0 0 34px rgb(31 90 156 / 0.07), 0 0 0 48px rgb(31 90 156 / 0.04), 0 16px 40px rgb(14 47 87 / 0.18)",
-              }}
-            >
-              <p className="font-sans text-white font-bold leading-snug tracking-wide">
-                <span className="block text-[11px] font-semibold tracking-[0.18em] text-white/75 mb-1">
+            <img
+              src="/images/problems/brain.png"
+              alt=""
+              className="relative h-full w-full object-contain"
+              decoding="async"
+              suppressHydrationWarning
+            />
+            <p className="absolute inset-0 z-[1] grid place-items-center text-center px-6 pointer-events-none">
+              <span className="font-sans text-white font-bold leading-snug tracking-wide drop-shadow-[0_2px_6px_rgba(8,30,90,0.65)]">
+                <span className="block text-[11px] font-semibold tracking-[0.18em] text-white/80 mb-1">
                   AI KOHO
                 </span>
                 <span className="block text-[18px]">解決する</span>
                 <span className="block text-[18px]">10の課題</span>
-              </p>
-            </div>
+              </span>
+            </p>
           </div>
         </div>
 
