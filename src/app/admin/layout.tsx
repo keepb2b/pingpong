@@ -29,29 +29,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-dvh bg-[var(--surface-2)]">
-      {/* 運営用であることが一目で分かるよう、ヘッダーの色を変える */}
-      <header className="bg-ink-900 text-white border-b-[3px] border-[var(--color-accent-500)]">
+      <header className="bg-[var(--sidebar)] text-white">
         <div className="mx-auto max-w-[1500px] px-4 sm:px-6">
           <div className="h-14 flex items-center gap-4">
-            <Link href="/admin" className="flex items-center gap-2.5">
-              <Logo size={26} className="[&_span]:text-white" />
-              <span className="px-1.5 py-0.5 rounded-[2px] bg-[var(--color-accent-500)] text-[10px] font-bold tracking-wide">
+            <Link href="/admin" className="flex items-center gap-2.5 min-w-0">
+              <Logo size={26} className="[&_img]:brightness-0 [&_img]:invert" />
+              <span className="px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-semibold tracking-wide">
                 運営管理
               </span>
             </Link>
 
             <div className="ml-auto flex items-center gap-4 text-[12px]">
-              <span className="hidden sm:inline text-white/70 tabular-nums">
+              <span className="hidden sm:inline text-[var(--sidebar-muted)] tabular-nums">
                 登録ユーザー {userCount ?? 0}名
               </span>
-              <span className="hidden sm:inline text-white/90">
+              <span className="hidden sm:inline text-[var(--sidebar-text)]">
                 {profile.display_name ?? profile.email}
               </span>
-              <Link href="/dashboard" className="text-white/80 hover:text-white hover:underline">
+              <Link href="/dashboard" className="text-[var(--sidebar-text)] hover:text-white">
                 管理画面へ戻る
               </Link>
               <form action="/auth/signout" method="post">
-                <button type="submit" className="text-white/80 hover:text-white hover:underline">
+                <button type="submit" className="text-[var(--sidebar-text)] hover:text-white">
                   ログアウト
                 </button>
               </form>
@@ -62,11 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-4 sm:px-6 py-6">{children}</main>
-
-      <footer className="border-t border-[var(--border)] bg-[var(--surface)] px-5 py-3 mt-8">
-        <p className="text-[11px] muted text-center">AI広報 運営管理システム</p>
-      </footer>
+      <main className="mx-auto max-w-[1500px] px-4 sm:px-6 py-8">{children}</main>
     </div>
   );
 }

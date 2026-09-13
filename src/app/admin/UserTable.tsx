@@ -176,7 +176,7 @@ export function UserTable({ rows }: { rows: AdminUserRow[] }) {
         title={`ユーザー詳細 — ${selected?.display_name ?? selected?.email ?? ""}`}
         wide
       >
-        {loading && <div className="h-40 skeleton rounded-[3px]" />}
+        {loading && <div className="h-40 skeleton rounded-lg" />}
 
         {!loading && detail && selected && (
           <div className="space-y-5">
@@ -236,7 +236,7 @@ export function UserTable({ rows }: { rows: AdminUserRow[] }) {
 
             {detail.payments.length > 0 && (
               <div>
-                <p className="heading-bar text-[13px] mb-2">直近の決済</p>
+                <p className="text-[13px] font-semibold mb-2">直近の決済</p>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -268,7 +268,7 @@ export function UserTable({ rows }: { rows: AdminUserRow[] }) {
 
             {detail.runs.length > 0 && (
               <div>
-                <p className="heading-bar text-[13px] mb-2">直近のAI実行</p>
+                <p className="text-[13px] font-semibold mb-2">直近のAI実行</p>
                 <ul className="space-y-1">
                   {detail.runs.slice(0, 8).map((r, i) => (
                     <li key={i} className="text-[12px] flex items-center gap-2">

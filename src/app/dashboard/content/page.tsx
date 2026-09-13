@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 export default async function ContentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; type?: string }>;
+  searchParams: Promise<{ status?: string; type?: string; q?: string }>;
 }) {
   const ctx = await getOrgContext();
   if (!ctx?.subjectId) redirect("/onboarding");
 
-  const { status, type } = await searchParams;
+  const { status, type, q } = await searchParams;
   const sb = await supabaseServer();
 
   let query = sb
@@ -30,6 +30,7 @@ export default async function ContentPage({
 
   if (status) query = query.eq("status", status);
   if (type) query = query.eq("type", type);
+  if (q?.trim()) query = query.ilike("title", `%${q.trim()}%`);
 
   const [{ data: items }, { data: all }] = await Promise.all([
     query,
@@ -59,26 +60,28 @@ export default async function ContentPage({
       ) : (
         <ul className="mt-4 grid sm:grid-cols-2 xl:grid-cols-3 gap-3 stagger">
           {items.map((c) => (
-            <li key={c.id}>
+            <li key={c.id} className="min-w-0">
               <Link
                 href={`/dashboard/content/${c.id}`}
-                className="card p-4 block h-full hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-150"
+                className="card p-4 block h-full min-w-0 overflow-hidden hover:border-brand-300 hover:-translate-y-0.5 transition-all duration-150"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <Badge tone={statusTone(c.status)}>{STATUS_LABEL[c.status] ?? c.status}</Badge>
-                  {c.risk !== "none" && <Badge tone={riskTone(c.risk)}>{RISK_LABEL[c.risk]}</Badge>}
+                  {c.risk !== "none" && (
+                    <Badge tone={riskTone(c.risk)}>{RISK_LABEL[c.risk]}</Badge>
+                  )}
                 </div>
 
-                <p className="text-sm font-medium leading-snug line-clamp-2">{c.title}</p>
+                <p className="text-sm font-medium leading-snug line-clamp-2 break-words">{c.title}</p>
                 {c.summary && (
-                  <p className="muted text-xs mt-1.5 line-clamp-3 leading-relaxed">{c.summary}</p>
+                  <p className="muted text-xs mt-1.5 line-clamp-3 leading-relaxed break-words">{c.summary}</p>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center gap-2 text-[11px] muted">
+                <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] muted">
                   <span>{CONTENT_TYPE_LABEL[c.type as keyof typeof CONTENT_TYPE_LABEL] ?? c.type}</span>
                   {c.goal && <span>· {GOAL_LABEL[c.goal as keyof typeof GOAL_LABEL]}</span>}
                   {c.version > 1 && <span>· v{c.version}</span>}
-                  <span className="ml-auto tabular-nums">{formatDateTime(c.created_at)}</span>
+                  <span className="ml-auto tabular-nums whitespace-nowrap">{formatDateTime(c.created_at)}</span>
                 </div>
               </Link>
             </li>

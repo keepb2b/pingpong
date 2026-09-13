@@ -1,6 +1,7 @@
 import { getPaymentSummary } from "@/lib/admin";
 import { isStripeConfigured } from "@/lib/stripe";
 import { Card, CardHeader, StatTile } from "@/components/ui";
+import { PageHeader } from "@/components/dashboard/shared";
 import { TrendChart, ChannelBars } from "@/components/charts";
 import { PaymentsPanel } from "./Panel";
 
@@ -17,10 +18,10 @@ export default async function AdminPaymentsPage() {
 
   return (
     <>
-      <h1 className="section-title text-[18px]">決済履歴</h1>
+      <PageHeader title="決済履歴" description="売上と決済の状態を確認できます。" />
 
       {!stripeReady && (
-        <div className="card p-4 mb-5 border-l-[3px] border-l-[var(--color-accent-500)]">
+        <div className="card p-4 mb-5">
           <p className="text-[13px] font-semibold">Stripeが未接続です</p>
           <p className="muted text-[12px] mt-1 leading-relaxed">
             <code className="font-mono">STRIPE_SECRET_KEY</code> を設定すると、Stripeから実際の決済を

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import { UserIcon, SettingsIcon, AdminIcon, LogoutIcon, CardIcon } from "@/components/icons/NavIcons";
+import { User, Settings, ShieldCheck, LogOut, CreditCard, ClipboardList } from "lucide-react";
 import { ROLE_LABEL } from "@/lib/constants";
 
 export type HeaderProfile = {
@@ -49,8 +49,8 @@ export function AccountMenu({ profile }: { profile: HeaderProfile }) {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-[3px] border border-transparent
-          hover:border-[var(--border-strong)] hover:bg-[var(--surface-3)] transition-colors"
+        className="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-lg border border-transparent
+          hover:bg-[var(--surface-3)] transition-colors"
       >
         <Avatar src={profile.avatarUrl} name={name} size={30} />
         <span className="hidden sm:block text-left leading-tight max-w-[11rem]">
@@ -103,12 +103,12 @@ export function AccountMenu({ profile }: { profile: HeaderProfile }) {
           {/* 導線 */}
           <ul className="py-1">
             {[
-              { href: "/dashboard/account", label: "アカウント情報を編集", icon: <UserIcon /> },
-              { href: "/dashboard/account#profile", label: "プロフィール詳細", icon: <ClipboardSmall /> },
-              { href: "/dashboard/settings", label: "設定・連携", icon: <SettingsIcon /> },
-              { href: "/dashboard/billing", label: "ご契約・料金", icon: <CardIcon /> },
+              { href: "/dashboard/account", label: "アカウント情報を編集", icon: <User size={16} strokeWidth={1.75} /> },
+              { href: "/dashboard/account#profile", label: "プロフィール詳細", icon: <ClipboardList size={16} strokeWidth={1.75} /> },
+              { href: "/dashboard/settings", label: "設定・連携", icon: <Settings size={16} strokeWidth={1.75} /> },
+              { href: "/dashboard/billing", label: "ご契約・料金", icon: <CreditCard size={16} strokeWidth={1.75} /> },
               ...(profile.isPlatformAdmin
-                ? [{ href: "/admin", label: "運営管理ページ", icon: <AdminIcon /> }]
+                ? [{ href: "/admin", label: "運営管理ページ", icon: <ShieldCheck size={16} strokeWidth={1.75} /> }]
                 : []),
             ].map((item) => (
               <li key={item.href + item.label}>
@@ -131,27 +131,12 @@ export function AccountMenu({ profile }: { profile: HeaderProfile }) {
               className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] text-left
                 hover:bg-[var(--surface-3)] transition-colors muted hover:text-[var(--text)]"
             >
-              <LogoutIcon />
+              <LogOut size={16} strokeWidth={1.75} />
               ログアウト
             </button>
           </form>
         </div>
       )}
     </div>
-  );
-}
-
-function ClipboardSmall() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M9 4.5H6.5A1.5 1.5 0 0 0 5 6v13.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H15"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <rect x="9" y="3" width="6" height="3.2" rx="0.8" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
   );
 }

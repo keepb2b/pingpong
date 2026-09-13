@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import styles from "./ProblemsDiagram.module.css";
 
 type Side = "left" | "right";
@@ -78,7 +77,7 @@ export function ProblemsDiagram() {
       }}
     >
       <div className="relative z-[1] mb-8 lg:mb-10 lg:max-w-[42%]">
-        <h2 className="font-sans text-[20px] sm:text-[22px] font-bold text-[var(--text)] tracking-tight">
+        <h2 className="text-[22px] sm:text-[26px] font-semibold text-ink-900 tracking-tight">
           AI広報が解決する課題
         </h2>
         <p className="mt-2 text-[12.5px] sm:text-[13px] leading-[1.9] text-[var(--text-muted)]">
@@ -194,12 +193,12 @@ function Capsule({
           imageSide === "left" ? "-left-1 lg:-left-3" : "-right-1 lg:-right-3"
         }`}
       >
-        <Image
+        <img
           src={`/images/issues/${children}.png`}
           alt=""
-          fill
-          sizes="(min-width: 1024px) 76px, 56px"
-          className="rounded-full object-contain"
+          className="h-full w-full rounded-full object-contain"
+          decoding="async"
+          suppressHydrationWarning
         />
       </span>
       <span className="w-full">{children}</span>

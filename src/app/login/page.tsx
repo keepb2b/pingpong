@@ -69,7 +69,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <main className="min-h-dvh bg-[var(--surface-2)]">
-      <header className="bg-[var(--surface)] border-b-[3px] border-brand-600">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="mx-auto max-w-5xl px-5 h-16 flex items-center">
           <Link href="/">
             <Logo size={30} />
@@ -78,10 +78,10 @@ export default function LoginPage() {
       </header>
 
       <div className="mx-auto max-w-md px-5 py-12">
-        <h1 className="section-title text-[18px]">ログイン</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight mb-6">ログイン</h1>
 
         <div className="card p-6">
-          <Suspense fallback={<div className="h-56 skeleton rounded-[3px]" />}>
+          <Suspense fallback={<div className="h-56 skeleton rounded-lg" />}>
             <LoginForm />
           </Suspense>
         </div>

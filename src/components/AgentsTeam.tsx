@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { AgentIcon } from "@/components/icons/AgentIcons";
 import type { AgentKey } from "@/lib/constants";
 import styles from "./AgentsTeam.module.css";
@@ -30,7 +29,12 @@ export function AgentsTeam() {
           {members.map((member) => (
             <li key={member.key} className={`${styles.member} ${styles[member.key]}`}>
               <div className={styles.illustration}>
-                <Image src={`/images/ai-team/${member.key}.png`} alt="" fill sizes="(max-width: 767px) 150px, 220px" />
+                <img
+                  src={`/images/ai-team/${member.key}.png`}
+                  alt=""
+                  decoding="async"
+                  suppressHydrationWarning
+                />
               </div>
               <div className={styles.copy}>
               <p className={styles.badge}><AgentIcon agent={member.key} size={17} /><span>{member.name}</span></p>

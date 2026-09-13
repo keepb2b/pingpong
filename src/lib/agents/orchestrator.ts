@@ -26,6 +26,17 @@ import {
   type GoalKey,
 } from "@/lib/constants";
 import { humanizeError } from "@/lib/user-error";
+import { revalidatePath } from "next/cache";
+
+function revalidateDashboard() {
+  try {
+    revalidatePath("/dashboard", "layout");
+    revalidatePath("/dashboard/content");
+    revalidatePath("/dashboard/calendar");
+  } catch {
+    // cron などリクエスト外では無視
+  }
+}
 
 const RISK_ORDER = ["none", "low", "medium", "high", "critical"];
 
@@ -589,6 +600,7 @@ export async function produceFromProposal(params: {
     });
   }
 
+  revalidateDashboard();
   return { contentId: content.id, risk: check.overall, blocked: check.blocked };
 }
 
@@ -674,7 +686,10 @@ export async function approveContent(params: {
     detail: { comment: params.comment },
   });
 
-  if (params.action !== "approve") return { status, scheduledPosts: 0 };
+  if (params.action !== "approve") {
+    revalidateDashboard();
+    return { status, scheduledPosts: 0 };
+  }
 
   const scheduled = await schedulePosts(content.id);
   return { status, scheduledPosts: scheduled };
@@ -752,6 +767,7 @@ export async function schedulePosts(contentId: string): Promise<number> {
   }
 
   await sb.from("content_items").update({ status: "scheduled" }).eq("id", contentId);
+  revalidateDashboard();
   return count;
 }
 

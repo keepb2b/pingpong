@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { EyeIcon, EyeOffIcon, CameraIcon, UserIcon } from "@/components/icons/NavIcons";
+import { Eye, EyeOff, Camera, User } from "lucide-react";
 import type { BadgeTone } from "@/lib/badge-tone";
 import { humanizeError, readJsonSafe } from "@/lib/user-error";
 
@@ -132,12 +132,16 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 mb-4 pb-2.5 border-b border-[var(--border)]">
+    <div className="flex items-start justify-between gap-3 mb-5">
       <div className="flex items-start gap-2.5 min-w-0">
-        {icon && <span className="shrink-0 mt-0.5 text-brand-600">{icon}</span>}
+        {icon && (
+          <span className="shrink-0 mt-0.5 h-8 w-8 rounded-lg bg-brand-50 text-brand-700 grid place-items-center">
+            {icon}
+          </span>
+        )}
         <div className="min-w-0">
-          <h3 className="heading-bar text-[14px]">{title}</h3>
-          {subtitle && <p className="muted text-[12px] mt-1 leading-relaxed">{subtitle}</p>}
+          <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
+          {subtitle && <p className="muted text-[13px] mt-1 leading-relaxed">{subtitle}</p>}
         </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -166,7 +170,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[2px] border text-[11px] font-semibold leading-tight whitespace-nowrap ${BADGE_TONES[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-semibold leading-tight whitespace-nowrap ${BADGE_TONES[tone]} ${className}`}
     >
       {children}
     </span>
@@ -181,6 +185,8 @@ export function StatTile({
   delta,
   hint,
   accent,
+  icon,
+  spark,
 }: {
   label: string;
   value: ReactNode;
@@ -188,25 +194,61 @@ export function StatTile({
   delta?: number;
   hint?: string;
   accent?: string;
+  icon?: ReactNode;
+  spark?: number[];
 }) {
   return (
-    <div className="card p-3.5 border-t-[3px]" style={accent ? { borderTopColor: accent } : undefined}>
-      <p className="muted text-[12px] font-medium leading-tight">{label}</p>
-      <p className="mt-1.5 text-[22px] font-bold tabular-nums tracking-tight leading-none">
-        {value}
-        {unit && <span className="text-[12px] font-medium muted ml-1">{unit}</span>}
-      </p>
-      <div className="mt-1.5 flex items-center gap-2 min-h-[15px]">
-        {typeof delta === "number" && (
+    <div className="card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="muted text-[13px] font-medium leading-tight">{label}</p>
+          <p className="mt-2 text-[26px] font-semibold tabular-nums tracking-tight leading-none text-ink-900">
+            {value}
+            {unit && <span className="text-[13px] font-medium muted ml-1">{unit}</span>}
+          </p>
+        </div>
+        {icon && (
           <span
-            className={`text-[11px] font-semibold tabular-nums ${delta >= 0 ? "text-[#1d6f4a]" : "text-[#c8102e]"}`}
+            className="h-9 w-9 rounded-lg grid place-items-center shrink-0 bg-brand-50 text-brand-700"
+            style={accent ? { background: `${accent}14`, color: accent } : undefined}
           >
-            {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}%
+            {icon}
           </span>
         )}
-        {hint && <span className="muted text-[11px] leading-tight">{hint}</span>}
+      </div>
+      {spark && spark.length > 1 && (
+        <MiniSpark points={spark} color={accent ?? "var(--color-brand-500)"} />
+      )}
+      <div className="mt-3 flex items-center gap-2 min-h-[16px]">
+        {typeof delta === "number" && Number.isFinite(delta) && (
+          <span
+            className={`text-[12px] font-semibold tabular-nums ${delta >= 0 ? "text-[#1d7a4a]" : "text-[#c8102e]"}`}
+          >
+            {delta >= 0 ? "前月比 +" : "前月比 "}
+            {delta}%
+          </span>
+        )}
+        {hint && <span className="muted text-[12px] leading-tight">{hint}</span>}
       </div>
     </div>
+  );
+}
+
+function MiniSpark({ points, color }: { points: number[]; color: string }) {
+  const max = Math.max(...points, 1);
+  const w = 88;
+  const h = 28;
+  const d = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * w;
+      const y = h - (p / max) * (h - 4) - 2;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="mt-3 block" aria-hidden>
+      <path d={d} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -295,7 +337,7 @@ export function PasswordInput({
         title={shown ? "パスワードを隠す" : "パスワードを表示"}
         className="absolute right-0 top-0 h-full px-3 flex items-center muted hover:text-[var(--text)] transition-colors"
       >
-        {shown ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+        {shown ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
       </button>
     </div>
   );
@@ -321,11 +363,11 @@ export function Toggle({
       className="flex items-start gap-2.5 w-full text-left"
     >
       <span
-        className={`mt-0.5 relative h-5 w-9 shrink-0 rounded-[3px] border transition-colors duration-150
+        className={`mt-0.5 relative h-5 w-9 shrink-0 rounded-full border transition-colors duration-150
           ${checked ? "bg-brand-600 border-brand-700" : "bg-[var(--surface-3)] border-[var(--border-strong)]"}`}
       >
         <span
-          className={`absolute top-[2px] h-3.5 w-3.5 rounded-[2px] bg-white shadow-sm transition-transform duration-150
+          className={`absolute top-[2px] h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-150
             ${checked ? "translate-x-[19px]" : "translate-x-[2px]"}`}
         />
       </span>
@@ -353,7 +395,7 @@ export function Avatar({
 
   return (
     <span
-      className={`inline-flex items-center justify-center shrink-0 overflow-hidden rounded-[3px] border border-[var(--border-strong)] bg-[var(--surface-3)] ${className}`}
+      className={`inline-flex items-center justify-center shrink-0 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-3)] ${className}`}
       style={{ width: size, height: size }}
     >
       {src ? (
@@ -368,7 +410,7 @@ export function Avatar({
         </span>
       ) : (
         <span className="muted">
-          <UserIcon size={Math.round(size * 0.58)} />
+          <User size={Math.round(size * 0.58)} strokeWidth={1.75} />
         </span>
       )}
     </span>
@@ -425,10 +467,10 @@ export function AvatarPicker({
             disabled={disabled}
             onClick={() => inputRef.current?.click()}
             aria-label="アバター画像を選択"
-            className="absolute -right-1.5 -bottom-1.5 h-7 w-7 rounded-[3px] bg-brand-600 text-white border border-brand-700
+            className="absolute -right-1.5 -bottom-1.5 h-7 w-7 rounded-lg bg-brand-600 text-white border border-brand-700
               grid place-items-center hover:bg-brand-500 transition-colors disabled:opacity-50"
           >
-            <CameraIcon size={14} />
+            <Camera size={14} strokeWidth={1.75} />
           </button>
         </span>
 
@@ -536,13 +578,13 @@ export function Modal({
     >
       <div
         className={`card w-full ${wide ? "max-w-3xl" : "max-w-lg"} max-h-[88vh] overflow-y-auto scroll-thin
-          animate-[rise_0.2s_cubic-bezier(0.22,1,0.36,1)] rounded-b-none sm:rounded-[4px] shadow-xl`}
+          animate-[rise_0.2s_cubic-bezier(0.22,1,0.36,1)] rounded-t-2xl sm:rounded-xl`}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-3 band">
-          <h2 className="font-bold text-[14px]">{title}</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-5 py-3.5 bg-[var(--surface)] border-b border-[var(--border)]">
+          <h2 className="font-semibold text-[15px]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white p-1 transition-colors"
+            className="muted hover:text-[var(--text)] p-1 rounded-lg hover:bg-[var(--surface-3)] transition-colors"
             aria-label="閉じる"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -569,7 +611,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="text-center py-10 px-6 border border-dashed border-[var(--border-strong)] rounded-[4px] bg-[var(--surface-2)]">
+    <div className="text-center py-12 px-6 rounded-xl bg-[var(--surface-2)]">
       {icon && <div className="mx-auto mb-2.5 muted w-fit">{icon}</div>}
       <p className="font-semibold text-[13px]">{title}</p>
       {body && <p className="muted text-[12px] mt-1.5 max-w-md mx-auto leading-relaxed">{body}</p>}
@@ -609,7 +651,7 @@ export function ToastHost() {
       {items.map((i) => (
         <div
           key={i.id}
-          className={`animate-[rise_0.2s_cubic-bezier(0.22,1,0.36,1)] px-4 py-2.5 rounded-[3px] text-[13px] font-medium
+          className={`animate-[rise_0.2s_cubic-bezier(0.22,1,0.36,1)] px-4 py-2.5 rounded-lg text-[13px] font-medium
             shadow-lg max-w-[90vw] text-white border-l-4
             ${i.tone === "ok" ? "bg-ink-800 border-l-[#1d6f4a]" : "bg-ink-800 border-l-[#c8102e]"}`}
         >
@@ -663,7 +705,7 @@ export function ProgressBar({
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div
-      className="w-full overflow-hidden bg-[var(--surface-3)] border border-[var(--border)] rounded-[2px]"
+      className="w-full overflow-hidden bg-[var(--surface-3)] border border-[var(--border)] rounded-md"
       style={{ height }}
       role="progressbar"
       aria-valuenow={value}

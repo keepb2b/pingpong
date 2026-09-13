@@ -27,7 +27,7 @@ export function Logo({
       <LogoMark size={Math.round(size * 1.6)} />
       {showTagline && (
         <span
-          className="font-serif font-medium muted tracking-wide"
+          className="font-medium muted tracking-wide"
           style={{ fontSize: Math.round(size * 0.3) }}
         >
           成果を出すAI広報部

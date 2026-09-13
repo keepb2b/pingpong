@@ -77,7 +77,7 @@ export default function SignupPage() {
   return (
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ヘッダー */}
-      <header className="bg-[var(--surface)] border-b-[3px] border-brand-600">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="mx-auto max-w-5xl px-5 h-16 flex items-center justify-between">
           <Link href="/">
             <Logo size={30} />
@@ -95,15 +95,15 @@ export default function SignupPage() {
           <span className="text-[var(--text)]">新規登録</span>
         </nav>
 
-        <h1 className="section-title text-[20px]">新規登録</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight mb-6">新規登録</h1>
 
         {/* 手順表示 — 日本のサイトでよく使われるステップ表示 */}
-        <ol className="flex mb-6 border border-[var(--border)] rounded-[4px] overflow-hidden bg-[var(--surface)]">
+        <ol className="flex mb-6 border border-[var(--border)] rounded-xl overflow-hidden bg-[var(--surface)]">
           {["お客様情報の入力", "初期設定", "利用開始"].map((label, i) => (
             <li
               key={label}
               className={`flex-1 text-center py-2.5 text-[12px] font-semibold border-r border-[var(--border)] last:border-r-0
-                ${i === 0 ? "band" : "muted"}`}
+                ${i === 0 ? "bg-brand-700 text-white" : "muted"}`}
             >
               <span className="tabular-nums mr-1.5">STEP {i + 1}</span>
               {label}
@@ -119,7 +119,7 @@ export default function SignupPage() {
           }}
         >
           {/* --------------------------------------------------- ご担当者 -- */}
-          <h2 className="heading-bar text-[15px] mb-4">ご担当者さまの情報</h2>
+          <h2 className="text-[15px] font-semibold mb-4">ご担当者さまの情報</h2>
 
           <div className="space-y-5">
             <div>
@@ -191,7 +191,7 @@ export default function SignupPage() {
           </div>
 
           {/* ----------------------------------------------------- 広報対象 */}
-          <h2 className="heading-bar text-[15px] mt-8 mb-4">広報対象の情報</h2>
+          <h2 className="text-[15px] font-semibold mt-8 mb-4">広報対象の情報</h2>
 
           <div className="space-y-5">
             <Field label="会社名・組織名" required>

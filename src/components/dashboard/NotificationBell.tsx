@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Bell } from "lucide-react";
 import { callApi } from "@/components/ui";
 
 type Notification = {
@@ -40,18 +41,10 @@ export function NotificationBell({ notifications }: { notifications: Notificatio
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative p-2 muted hover:text-[var(--text)] rounded-[3px] hover:bg-[var(--surface-3)]"
+        className="relative p-2 muted hover:text-[var(--text)] rounded-lg hover:bg-[var(--surface-3)]"
         aria-label={`通知 ${unread}件`}
       >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9Z"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinejoin="round"
-          />
-          <path d="M10 18.5a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
+        <Bell size={18} strokeWidth={1.75} />
         {unread > 0 && (
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[var(--surface)]">
           </span>

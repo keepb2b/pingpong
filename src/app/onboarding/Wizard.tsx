@@ -266,7 +266,7 @@ export function OnboardingWizard({
                       on ? prev.filter((x) => x !== g.key) : [...prev, g.key],
                     )
                   }
-                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-[4px] border text-left text-sm transition-all
+                  className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left text-sm transition-all
                     ${on ? "border-brand-500 bg-brand-50 dark:bg-brand-900/25" : "border-[var(--border)] hover:border-brand-300"}`}
                 >
                   <span
@@ -344,7 +344,7 @@ export function OnboardingWizard({
                           tone: on ? voice.tone.filter((x) => x !== t) : [...voice.tone, t],
                         })
                       }
-                      className={`px-3 py-1.5 rounded-[3px] border text-xs transition-colors
+                      className={`px-3 py-1.5 rounded-lg border text-xs transition-colors
                         ${on ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200" : "border-[var(--border)] muted hover:border-brand-300"}`}
                     >
                       {t}
@@ -588,7 +588,7 @@ function Shell({
   total: number;
 }) {
   return (
-    <main className="min-h-dvh py-10 px-5 relative">
+    <main className="min-h-dvh py-10 px-5 relative bg-[var(--surface-2)]">
       <div className="relative mx-auto max-w-2xl">
         <div className="flex items-center justify-center mb-6">
           <Logo size={28} />

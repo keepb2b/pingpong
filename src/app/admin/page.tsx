@@ -1,5 +1,6 @@
 import { listAllUsers, summarizeUsers } from "@/lib/admin";
 import { Card, CardHeader, StatTile } from "@/components/ui";
+import { PageHeader } from "@/components/dashboard/shared";
 import { TrendChart, ChannelBars } from "@/components/charts";
 import { UserTable } from "./UserTable";
 
@@ -11,7 +12,7 @@ export default async function AdminUsersPage() {
 
   return (
     <>
-      <h1 className="section-title text-[18px]">ユーザー管理</h1>
+      <PageHeader title="ユーザー管理" description="登録ユーザーと契約状態を確認できます。" />
 
       {/* -------------------------------------------------------- 概況 --- */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">

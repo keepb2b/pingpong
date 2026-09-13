@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./WorkflowCycle.module.css";
 
 const CX = 200;
@@ -98,10 +98,44 @@ function centerDeg(i: number) {
 }
 
 export function WorkflowCycle() {
-  const [active, setActive] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [auto, setAuto] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    setReduceMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setInView(true);
+      },
+      { threshold: 0.28 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView || hovered !== null) return;
+    if (reduceMotion) return;
+
+    const id = window.setInterval(() => {
+      setAuto((i) => (i + 1) % N);
+    }, 1600);
+    return () => window.clearInterval(id);
+  }, [inView, hovered, reduceMotion]);
+
+  const playing = inView && hovered === null && !reduceMotion;
+  const active = hovered ?? (playing ? auto : null);
 
   return (
-    <div className={styles.wrap}>
+    <div ref={wrapRef} className={styles.wrap}>
       <div className={styles.stage}>
         <svg className={styles.wheel} viewBox="0 0 400 400" role="img" aria-label="広報活動の9つの循環">
           {STEPS.map((step, i) => {
@@ -110,10 +144,10 @@ export function WorkflowCycle() {
               <g
                 key={step.label}
                 className={styles.slice}
-                onMouseEnter={() => setActive(i)}
-                onMouseLeave={() => setActive(null)}
-                onFocus={() => setActive(i)}
-                onBlur={() => setActive(null)}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(i)}
+                onBlur={() => setHovered(null)}
                 tabIndex={0}
               >
                 <path

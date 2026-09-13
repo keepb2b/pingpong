@@ -15,9 +15,11 @@ export default function AppError({
   }, [error]);
 
   return (
-    <main className="min-h-dvh flex items-center justify-center px-5">
-      <div className="max-w-md text-center">
-        <h1 className="text-lg font-bold">サーバーでエラーが発生しました</h1>
+    <main className="min-h-dvh flex items-center justify-center px-5 bg-[var(--surface-2)]">
+      <div className="card max-w-md w-full p-6 sm:p-8 text-center">
+        <h1 className="text-[22px] font-semibold tracking-tight text-ink-900">
+          サーバーでエラーが発生しました
+        </h1>
         <p className="muted text-sm mt-2 leading-relaxed">
           広報活動の処理が終わった直後に画面を再読み込みすると、一時的に表示できないことがあります。
         </p>

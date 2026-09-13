@@ -14,7 +14,8 @@ export function riskTone(risk: string): BadgeTone {
 
 export function statusTone(status: string): BadgeTone {
   if (["published", "approved"].includes(status)) return "good";
-  if (["pending_approval", "fact_check", "scheduled", "proposed"].includes(status)) return "warn";
+  if (status === "scheduled") return "brand";
+  if (["pending_approval", "fact_check", "proposed"].includes(status)) return "warn";
   if (["rejected", "failed"].includes(status)) return "bad";
   return "neutral";
 }
