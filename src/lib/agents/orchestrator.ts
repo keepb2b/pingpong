@@ -25,6 +25,7 @@ import {
   type ContentTypeKey,
   type GoalKey,
 } from "@/lib/constants";
+import { humanizeError } from "@/lib/user-error";
 
 const RISK_ORDER = ["none", "low", "medium", "high", "critical"];
 
@@ -139,9 +140,20 @@ export async function runDailyCycle(subjectId: string): Promise<{
     };
   }
 
-  const decision = await decideToday(subjectId);
+  try {
+  const decision = await decideToday(subjectId).catch((err) => {
+    console.error("[daily_cycle] decideToday", err);
+    return {
+      should_post: false,
+      rationale: humanizeError(err),
+      proposals: [],
+      alternative_work: ["時間をおいて「今日の広報活動を実行」を再実行する"],
+    };
+  });
 
-  if (!decision.should_post || !decision.proposals?.length) {
+  const proposals = Array.isArray(decision.proposals) ? decision.proposals : [];
+
+  if (!decision.should_post || !proposals.length) {
     await notify({
       orgId: subject.org_id,
       subjectId,
@@ -160,10 +172,10 @@ export async function runDailyCycle(subjectId: string): Promise<{
 
   const proposalIds: string[] = [];
 
-  for (const p of decision.proposals.slice(0, 3)) {
+  for (const p of proposals.slice(0, 3)) {
     const intakeId = isUuid(p.intake_hint) ? p.intake_hint : null;
 
-    const { data: proposal } = await sb
+    const { data: proposal, error: proposalError } = await sb
       .from("proposals")
       .insert({
         org_id: subject.org_id,
@@ -172,19 +184,29 @@ export async function runDailyCycle(subjectId: string): Promise<{
         theme: String(p.theme ?? "本日の発信").slice(0, 500) || "本日の発信",
         reason: String(p.reason ?? "戦略判断").slice(0, 2000) || "戦略判断",
         goal: coerceGoal(p.goal),
-        audience: p.audience,
+        audience: p.audience != null ? String(p.audience).slice(0, 500) : null,
         channels: coerceChannels(p.channels),
-        cta: p.cta,
-        scheduled_for: p.scheduled_for ?? null,
-        expected_effect: p.expected_effect,
-        cautions: p.cautions,
-        score: p.score ?? 50,
+        cta: p.cta != null ? String(p.cta).slice(0, 500) : null,
+        scheduled_for: coerceScheduledFor(p.scheduled_for),
+        expected_effect: p.expected_effect != null ? String(p.expected_effect).slice(0, 1000) : null,
+        cautions: p.cautions != null ? String(p.cautions).slice(0, 1000) : null,
+        score: Number.isFinite(Number(p.score)) ? Math.max(0, Math.min(100, Number(p.score))) : 50,
         status: "proposed",
       })
       .select("id")
       .single();
 
-    if (!proposal) continue;
+    if (proposalError || !proposal) {
+      console.error("[proposals insert]", proposalError);
+      await notify({
+        orgId: subject.org_id,
+        subjectId,
+        kind: "error",
+        title: "広報提案の保存に失敗しました",
+        body: humanizeError(proposalError?.message ?? "proposal insert failed"),
+      });
+      continue;
+    }
     proposalIds.push(proposal.id);
 
     // 提案からコンテンツ制作 → リスク確認 → 承認待ちまで一気に進める
@@ -199,10 +221,7 @@ export async function runDailyCycle(subjectId: string): Promise<{
         subjectId,
         kind: "error",
         title: "コンテンツ制作に失敗しました",
-        body:
-          err instanceof Error
-            ? err.message
-            : String(err),
+        body: humanizeError(err),
       });
     }
   }
@@ -215,12 +234,41 @@ export async function runDailyCycle(subjectId: string): Promise<{
     detail: { proposals: proposalIds.length, rationale: decision.rationale },
   });
 
+  if (proposalIds.length) {
+    await notify({
+      orgId: subject.org_id,
+      subjectId,
+      kind: "info",
+      agent: "strategist",
+      title: `本日の広報活動が完了しました（提案${proposalIds.length}件）`,
+      body: String(decision.rationale ?? "").slice(0, 1500),
+    });
+  }
+
   return {
     posted: true,
     rationale: decision.rationale,
     proposalIds,
     alternativeWork: decision.alternative_work ?? [],
   };
+  } catch (err) {
+    console.error("[daily_cycle]", err);
+    await notify({
+      orgId: subject.org_id,
+      subjectId,
+      kind: "error",
+      agent: "strategist",
+      title: "今日の広報活動を完了できませんでした",
+      body: humanizeError(err),
+    });
+    return {
+      posted: false,
+      rationale: humanizeError(err),
+      proposalIds: [],
+      alternativeWork: ["時間をおいて「今日の広報活動を実行」を再実行する"],
+      skipped: "error",
+    };
+  }
 }
 
 function isUuid(v: unknown): v is string {
@@ -260,11 +308,20 @@ function coerceGoal(value: unknown): GoalKey | null {
 }
 
 function coerceChannels(value: unknown): ChannelKey[] {
-  const list = Array.isArray(value) ? value : [];
+  const list = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[,、]/) : [];
   const out = list
     .map((c) => String(c).trim().toLowerCase())
     .filter((c): c is ChannelKey => CHANNEL_KEYS.has(c as ChannelKey));
   return out.length ? out : (["x"] as ChannelKey[]);
+}
+
+function coerceScheduledFor(value: unknown): string | null {
+  if (value == null || value === "") return null;
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) return null;
+  const t = d.getTime();
+  if (t < Date.now() - 864e5 * 2 || t > Date.now() + 864e5 * 400) return null;
+  return d.toISOString();
 }
 
 function asTextArray(value: unknown): string[] {
@@ -306,6 +363,7 @@ export async function produceFromProposal(params: {
   });
 
   const title = String(written.title || proposal.theme || "無題").trim() || "無題";
+  const bodyText = typeof written.body === "string" ? written.body : String(written.body ?? "");
   const { data: content, error: insertError } = await sb
     .from("content_items")
     .insert({
@@ -314,7 +372,7 @@ export async function produceFromProposal(params: {
       proposal_id: proposal.id,
       type,
       title,
-      body: String(written.body ?? ""),
+      body: bodyText,
       summary: written.summary ? String(written.summary) : null,
       keywords: asTextArray(written.keywords),
       cta: written.cta ? String(written.cta) : null,
@@ -335,7 +393,7 @@ export async function produceFromProposal(params: {
       goal,
       title,
     });
-    throw new Error(insertError?.message ?? "failed to create content");
+    throw new Error(humanizeError(insertError?.message ?? "failed to create content"));
   }
 
   // 2) 計測用の専用リンク
@@ -373,15 +431,16 @@ export async function produceFromProposal(params: {
       });
 
       for (const v of variants) {
+        const hashtags = asTextArray(v.hashtags);
         await sb.from("content_variants").insert({
           org_id: proposal.org_id,
           content_id: content.id,
           channel: v.channel,
-          body: v.body,
-          hashtags: v.hashtags ?? [],
-          cta: v.cta,
-          char_count: v.body?.length ?? 0,
-          optimized_for: v.reason,
+          body: String(v.body ?? ""),
+          hashtags,
+          cta: v.cta ? String(v.cta) : null,
+          char_count: String(v.body ?? "").length,
+          optimized_for: v.reason ? String(v.reason) : null,
           ab_group: "A",
         });
         if (v.ab_variant) {
@@ -389,10 +448,10 @@ export async function produceFromProposal(params: {
             org_id: proposal.org_id,
             content_id: content.id,
             channel: v.channel,
-            body: v.ab_variant,
-            hashtags: v.hashtags ?? [],
-            cta: v.cta,
-            char_count: v.ab_variant.length,
+            body: String(v.ab_variant),
+            hashtags,
+            cta: v.cta ? String(v.cta) : null,
+            char_count: String(v.ab_variant).length,
             optimized_for: "A/Bテスト B案",
             ab_group: "B",
           });
@@ -430,16 +489,29 @@ export async function produceFromProposal(params: {
   }
 
   // 5) AIアナリスト — ファクトチェックとリスク判定
-  const check = await factCheck({ subjectId: proposal.subject_id, contentId: content.id });
+  let check: Awaited<ReturnType<typeof factCheck>>;
+  try {
+    check = await factCheck({ subjectId: proposal.subject_id, contentId: content.id });
+  } catch (err) {
+    console.error("[factCheck]", err);
+    check = {
+      overall: "none",
+      passed: true,
+      blocked: false,
+      findings: [],
+      unverified_claims: [],
+      summary: "自動検査を完了できなかったため、ダッシュボードで内容をご確認ください。",
+    };
+  }
 
   await sb.from("risk_checks").insert({
     org_id: proposal.org_id,
     content_id: content.id,
     overall: check.overall,
     passed: check.passed,
-    findings: check.findings,
-    unverified_claims: check.unverified_claims,
-    blocked: check.blocked,
+    findings: Array.isArray(check.findings) ? check.findings : [],
+    unverified_claims: Array.isArray(check.unverified_claims) ? check.unverified_claims : [],
+    blocked: Boolean(check.blocked),
     checked_by: "analyst",
   });
 
@@ -560,15 +632,6 @@ export async function approveContent(params: {
     .single();
 
   if (!content) throw new Error("content not found");
-
-  const alreadyDecided =
-    (params.action === "approve" && content.status === "approved") ||
-    (params.action === "reject" && content.status === "rejected") ||
-    (params.action === "hold" && content.status === "on_hold") ||
-    (params.action === "revise" && content.status === "draft");
-  if (alreadyDecided) {
-    return { status: content.status, scheduledPosts: 0 };
-  }
 
   await sb.from("approvals").insert({
     org_id: content.org_id,

@@ -117,7 +117,36 @@ JSONのみを出力:
     fallback: () => fallbackContent(params, ctx.subjectName),
   });
 
-  return result ?? fallbackContent(params, ctx.subjectName);
+  const fallback = fallbackContent(params, ctx.subjectName);
+  return normalizeWritten(result, fallback);
+}
+
+function asPlain(value: unknown, fallback: string): string {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return fallback;
+}
+
+function normalizeWritten(raw: WrittenContent | null | undefined, fallback: WrittenContent): WrittenContent {
+  if (!raw || typeof raw !== "object") return fallback;
+  const keywords = Array.isArray(raw.keywords)
+    ? raw.keywords.map((k) => String(k).trim()).filter(Boolean).slice(0, 30)
+    : fallback.keywords;
+  const unverified = Array.isArray(raw.unverified)
+    ? raw.unverified.map((k) => String(k).trim()).filter(Boolean)
+    : [];
+  const headlines = Array.isArray(raw.headline_options)
+    ? raw.headline_options.map((k) => String(k).trim()).filter(Boolean)
+    : [];
+  return {
+    title: asPlain(raw.title, fallback.title).slice(0, 200),
+    body: asPlain(raw.body, fallback.body),
+    summary: asPlain(raw.summary, fallback.summary).slice(0, 500),
+    keywords,
+    cta: asPlain(raw.cta, fallback.cta).slice(0, 500),
+    unverified,
+    headline_options: headlines,
+  };
 }
 
 function fallbackContent(

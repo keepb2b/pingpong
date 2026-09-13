@@ -113,7 +113,7 @@ export default async function DashboardHome() {
             <AgentButton
               label="今日の広報活動を実行"
               body={{ action: "daily_cycle", subjectId }}
-              successMessage="AI広報部が本日の活動を実行しました"
+              successMessage="本日の広報活動を開始しました。完了するとお知らせに表示されます"
             />
             <AgentButton
               label="今日の判断を見る"

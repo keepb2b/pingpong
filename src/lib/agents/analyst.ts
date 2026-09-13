@@ -182,9 +182,9 @@ JSONのみ:
     passed: !blocked && SEVERITY_ORDER.indexOf(overall) <= 1,
     blocked,
     findings,
-    unverified_claims:
-      result?.unverified_claims ??
-      deterministic
+    unverified_claims: Array.isArray(result?.unverified_claims)
+      ? result.unverified_claims
+      : deterministic
         .filter((d) => d.checkpoint === "未確認の数値")
         .map((d) => ({
           claim: d.quote,
@@ -199,10 +199,12 @@ JSONのみ:
   };
 }
 
-function mergeFindings(a: RiskFinding[], b: RiskFinding[]): RiskFinding[] {
+function mergeFindings(a: RiskFinding[], b: unknown): RiskFinding[] {
+  const extra = Array.isArray(b) ? b : [];
   const seen = new Set<string>();
   const out: RiskFinding[] = [];
-  for (const f of [...a, ...b]) {
+  for (const f of [...a, ...extra]) {
+    if (!f || typeof f !== "object") continue;
     const key = `${f.checkpoint}::${f.quote}`;
     if (seen.has(key)) continue;
     seen.add(key);
