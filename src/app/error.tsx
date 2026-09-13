@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { PublicShell } from "@/components/dashboard/PublicShell";
 
 export default function AppError({
   error,
@@ -15,7 +16,7 @@ export default function AppError({
   }, [error]);
 
   return (
-    <main className="min-h-dvh flex items-center justify-center px-5 bg-[var(--surface-2)]">
+    <PublicShell><main className="min-h-dvh flex items-center justify-center px-5 bg-[var(--surface-2)]">
       <div className="card max-w-md w-full p-6 sm:p-8 text-center">
         <h1 className="text-[22px] font-semibold tracking-tight text-ink-900">
           サーバーでエラーが発生しました
@@ -35,6 +36,6 @@ export default function AppError({
           </Link>
         </div>
       </div>
-    </main>
+    </main></PublicShell>
   );
 }

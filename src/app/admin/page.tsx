@@ -15,7 +15,7 @@ export default async function AdminUsersPage() {
       <PageHeader title="ユーザー管理" description="登録ユーザーと契約状態を確認できます。" />
 
       {/* -------------------------------------------------------- 概況 --- */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
         <StatTile label="総ユーザー数" value={s.total} unit="名" accent="var(--color-brand-600)" />
         <StatTile label="ご利用中" value={s.active} unit="名" accent="#1d6f4a" />
         <StatTile label="未契約" value={s.noPlan} unit="名" accent="#97a2ae" />
@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* -------------------------------------------------------- 図表 --- */}
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader
             title="新規登録の推移"
@@ -58,7 +58,7 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card>
           <CardHeader title="最終利用からの経過" subtitle="休眠ユーザーの把握に使います。" />
           <ChannelBars items={s.activityBreakdown} unit="名" />

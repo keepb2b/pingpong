@@ -70,7 +70,7 @@ export default async function StrategyPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {!latest ? (
             <Card>

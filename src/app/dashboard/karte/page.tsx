@@ -47,7 +47,7 @@ export default async function KartePage() {
         </p>
       </Card>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card>
             <CardHeader title="カルテ項目" subtitle="クリックすると編集できます。" />

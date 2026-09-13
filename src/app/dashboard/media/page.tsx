@@ -58,7 +58,7 @@ export default async function MediaPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader title="提案の状況" subtitle="送付履歴・返信・取材・掲載実績を管理します。" />

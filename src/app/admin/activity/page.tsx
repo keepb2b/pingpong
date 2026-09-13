@@ -68,7 +68,7 @@ export default async function AdminActivityPage() {
         description="直近30日間の、プラットフォーム全体の稼働状況です。"
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         <StatTile label="AI実行回数" value={allRuns.length} unit="回" accent="var(--color-brand-600)" />
         <StatTile
           label="AI利用料"
@@ -92,7 +92,7 @@ export default async function AdminActivityPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader title="AI実行回数の推移" subtitle="直近30日間の日別。" />
           <TrendChart
@@ -123,7 +123,7 @@ export default async function AdminActivityPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader title="使用モデルの内訳" subtitle="コスト管理の参考にしてください。" />
           <ChannelBars

@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getOrgContext, supabaseServer } from "@/lib/supabase/server";
-import { LogoMark } from "@/components/Logo";
 import { SidebarNav, MobileNav } from "@/components/dashboard/Nav";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { SubjectSwitcher } from "@/components/dashboard/SubjectSwitcher";
 import { AccountMenu } from "@/components/dashboard/AccountMenu";
 import { RefreshOnFocus } from "@/components/dashboard/RefreshOnFocus";
 import { HeaderSearch } from "@/components/dashboard/HeaderSearch";
-import { HeaderMeta } from "@/components/dashboard/HeaderMeta";
+import { DashboardMark } from "@/components/dashboard/Brand";
 
 export const dynamic = "force-dynamic";
 
@@ -65,21 +64,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isPlatformAdmin = Boolean(profile?.is_platform_admin);
 
   return (
-    <div className="min-h-dvh flex bg-[var(--surface-2)]">
+    <div className="dashboard-shell min-h-dvh flex bg-[var(--surface-2)]">
       <RefreshOnFocus />
-      <aside className="hidden lg:flex w-[15.5rem] shrink-0 flex-col bg-[var(--sidebar)] sticky top-0 h-dvh">
-        <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/10">
+      <aside className="dashboard-sidebar hidden lg:flex w-[14rem] shrink-0 flex-col bg-[var(--sidebar)] sticky top-0 h-dvh">
+        <div className="dashboard-brand h-16 flex items-center gap-2.5 px-5">
           <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
-            <LogoMark size={22} className="brightness-0 invert" />
-            <span className="text-white text-[14px] font-semibold tracking-wide truncate">AI広報部</span>
+            <DashboardMark />
+            <span className="text-white text-[18px] font-semibold tracking-wide truncate">AI広報部</span>
           </Link>
         </div>
 
-        <div className="p-3 border-b border-white/10">
+        <div className="dashboard-subject px-3 pb-2">
           <SubjectSwitcher subjects={subjects ?? []} activeId={ctx.subjectId} tone="dark" />
         </div>
 
-        <div className="flex-1 overflow-y-auto scroll-thin py-4">
+        <div className="flex-1 overflow-y-auto scroll-thin py-3">
           <SidebarNav
             pending={pendingCount ?? 0}
             mentions={mentionCount ?? 0}
@@ -103,7 +102,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               />
             </div>
             <Link href="/dashboard" className="lg:hidden flex items-center gap-2 min-w-0">
-              <LogoMark size={22} />
+              <DashboardMark size={22} />
               <span className="font-semibold text-[14px] truncate">AI広報部</span>
             </Link>
 
@@ -127,7 +126,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   isPlatformAdmin,
                 }}
               />
-              <HeaderMeta />
             </div>
           </div>
           <div className="sm:hidden px-3 pb-3">
@@ -135,7 +133,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1280px]">{children}</main>
+        <main className="dashboard-main flex-1 w-full">{children}</main>
       </div>
     </div>
   );

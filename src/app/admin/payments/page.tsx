@@ -30,7 +30,7 @@ export default async function AdminPaymentsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatTile
           label="今月の売上"
           value={yen(thisMonth)}
@@ -47,7 +47,7 @@ export default async function AdminPaymentsPage() {
         <StatTile label="決済件数" value={summary.count} unit="件" accent="#0f6e8c" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6 mb-5">
         <Card className="lg:col-span-2">
           <CardHeader title="月次売上の推移" subtitle="直近12か月。成功した決済のみを集計しています。" />
           <TrendChart series={[{ name: "売上", points: summary.byMonth }]} unit="円" />

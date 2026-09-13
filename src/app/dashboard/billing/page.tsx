@@ -71,7 +71,7 @@ export default async function BillingPage({
         </Card>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatTile label="月額合計" value={yen(monthly)} accent="var(--color-brand-500)" />
         <StatTile label="広報対象" value={subjectCount ?? 0} unit="件" accent="var(--color-writer)" />
         <StatTile
@@ -88,7 +88,7 @@ export default async function BillingPage({
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader

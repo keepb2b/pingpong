@@ -27,7 +27,7 @@ export function HeaderSearch() {
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="キーワードで検索"
+        placeholder="キーワードで検索（投稿・分析・資料など）"
         className="field-input h-10 pl-9 pr-3 text-[13px] bg-[var(--surface-2)] border-[var(--border)]"
         aria-label="コンテンツを検索"
       />

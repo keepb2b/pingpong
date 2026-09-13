@@ -13,7 +13,7 @@ import {
   callApi,
   toast,
 } from "@/components/ui";
-import { Logo } from "@/components/Logo";
+import { DashboardBrand } from "@/components/dashboard/Brand";
 import { SUBJECT_TYPE_LABEL } from "@/lib/constants";
 
 export default function SignupPage() {
@@ -80,7 +80,7 @@ export default function SignupPage() {
       <header className="bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="mx-auto max-w-5xl px-4 sm:px-5 h-16 flex items-center justify-between gap-3">
           <Link href="/">
-            <Logo size={30} />
+            <DashboardBrand />
           </Link>
           <Link href="/login" className="text-[12px] sm:text-[13px] text-[var(--link)] hover:underline shrink-0">
             ログイン

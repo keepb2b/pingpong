@@ -59,7 +59,7 @@ export default async function SettingsPage() {
         description="対話頻度、投稿頻度、媒体連携、広報対象、権限を設定します。すべていつでも変更できます。"
       />
 
-      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="page-grid grid lg:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-4 sm:space-y-6">
           <div id="line" className="scroll-mt-20">
             <Card>

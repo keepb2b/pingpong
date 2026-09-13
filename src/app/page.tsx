@@ -1,7 +1,8 @@
+import { PublicShell } from "@/components/dashboard/PublicShell";
+import { DashboardBrand } from "@/components/dashboard/Brand";
 ﻿import Link from "next/link";
 import { PRICING, SETUP_INCLUDES, yen, GOALS, RISK_CHECKPOINTS } from "@/lib/constants";
 import { LineIcon, LoopIcon, ShieldCheckIcon } from "@/components/icons/AgentIcons";
-import { Logo, LogoMark } from "@/components/Logo";
 import { SecretaryChatDemo } from "@/components/SecretaryChatDemo";
 import { ProblemsDiagram } from "@/components/ProblemsDiagram";
 import { AgentsTeam } from "@/components/AgentsTeam";
@@ -39,11 +40,12 @@ const FEATURES = [
 
 export default function LandingPage() {
   return (
+    <PublicShell>
     <main className="min-h-dvh bg-[var(--surface-2)]">
       {/* ------------------------------------------------------------ nav -- */}
       <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 sm:px-5 h-16 flex items-center justify-between gap-2 sm:gap-4">
-          <Logo size={30} />
+          <DashboardBrand />
 
           <nav className="flex items-center gap-1 text-[13px] shrink-0">
             <a href="#problems" className="hidden md:block px-3 py-2 muted hover:text-[var(--text)]">
@@ -354,8 +356,7 @@ export default function LandingPage() {
       <footer className="bg-ink-900 text-white/70">
         <div className="mx-auto max-w-6xl px-4 sm:px-5 py-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <LogoMark size={26} />
-            <span className="text-[13px] text-white font-semibold">AI広報</span>
+            <DashboardBrand />
             <span className="text-[11.5px] font-medium">成果を出すAI広報部</span>
           </div>
           <div className="flex gap-5 text-[12.5px]">
@@ -369,5 +370,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </main>
+    </PublicShell>
   );
 }
