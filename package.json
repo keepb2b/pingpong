@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test:line": "node --test scripts/tests/line.test.cjs scripts/tests/webhook.test.cjs scripts/tests/promotion.test.cjs",
     "db:push": "node scripts/apply-migrations.mjs",
     "db:seed": "node scripts/seed.mjs",
     "db:seed:admin": "node scripts/seed-admin.mjs"

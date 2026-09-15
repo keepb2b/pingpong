@@ -34,13 +34,56 @@ export async function replyMessage(replyToken: string, messages: LineMessage[]) 
   if (!res.ok) throw new Error(`LINE reply ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
 
-export async function pushMessage(to: string, messages: LineMessage[]) {
-  const res = await fetch(`${API}/message/push`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ to, messages: messages.slice(0, 5) }),
-  });
-  if (!res.ok) throw new Error(`LINE push ${res.status}: ${(await res.text()).slice(0, 300)}`);
+/** Reuse retryKey only for the same recipient and messages, within 24 hours. */
+export async function pushMessage(
+  to: string,
+  messages: LineMessage[],
+  options: { retryKey?: string } = {},
+): Promise<void> {
+  if (messages.length < 1 || messages.length > 5) {
+    throw new Error("LINE push requires between 1 and 5 messages");
+  }
+
+  const accessToken = token();
+  const retryKey = options.retryKey ?? crypto.randomUUID();
+  const body = JSON.stringify({ to, messages });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
+
+    let res: Response;
+    try {
+      res = await fetch(`${API}/message/push`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "X-Line-Retry-Key": retryKey,
+        },
+        body,
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (error) {
+      if (attempt === 2) {
+        throw new Error(`LINE push failed after 3 attempts: ${error instanceof Error ? error.message : String(error)}`, {
+          cause: error,
+        });
+      }
+      continue;
+    }
+
+    // A previous attempt may have succeeded even if its response was lost.
+    if (res.ok || (res.status === 409 && res.headers.has("x-line-accepted-request-id"))) {
+      await res.body?.cancel().catch(() => undefined);
+      return;
+    }
+
+    const detail = (await res.text().catch(() => "Could not read error response")).slice(0, 300);
+    const requestId = res.headers.get("x-line-request-id");
+    const error = new Error(`LINE push ${res.status}${requestId ? ` (request ${requestId})` : ""}: ${detail}`);
+    // Invalid credentials, message limits and other 4xx errors need intervention.
+    if (res.status < 500 || attempt === 2) throw error;
+  }
 }
 
 export async function getProfile(userId: string): Promise<{
@@ -101,7 +144,7 @@ export type ProposalCard = {
 };
 
 /** 提案内容をLINEのFlex Messageで提示し、その場で承認まで完了できるようにする。 */
-export function proposalFlex(card: ProposalCard, _appUrl: string): LineMessage {
+export function proposalFlex(card: ProposalCard, appUrl: string): LineMessage {
   const row = (label: string, value: string) => ({
     type: "box",
     layout: "baseline",
@@ -220,10 +263,9 @@ export function proposalFlex(card: ProposalCard, _appUrl: string): LineMessage {
             style: "link",
             height: "sm",
             action: {
-              type: "postback",
+              type: "uri",
               label: "詳細を確認",
-              data: `action=detail&id=${card.id}`,
-              displayText: "詳細を確認します",
+              uri: `${appUrl.replace(/\/$/, "")}/dashboard/content/${encodeURIComponent(card.id)}`,
             },
           },
         ],

@@ -3,7 +3,8 @@ import { verifyLineSignature } from "@/lib/line";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// The interview and production continue in after() after LINE receives HTTP 200.
+export const maxDuration = 300;
 
 type LineEvent = {
   type: string;
@@ -46,11 +47,7 @@ export async function POST(request: Request) {
     await processLineEvents(events);
   };
 
-  try {
-    after(() => run());
-  } catch {
-    void run();
-  }
+  after(run);
 
   return NextResponse.json({ ok: true });
 }

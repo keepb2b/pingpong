@@ -51,23 +51,29 @@ export async function notify(params: {
   agent?: string;
   toLine?: boolean;
   lineMessage?: Record<string, unknown>;
+  lineMessages?: Record<string, unknown>[];
+  lineUserId?: string;
 }) {
   const sb = supabaseAdmin();
   let sent = false;
 
   if (params.toLine && isLineConfigured()) {
-    const { data: accounts } = await sb
+    let accountQuery = sb
       .from("line_accounts")
       .select("line_user_id")
       .eq("org_id", params.orgId);
+    if (params.lineUserId) accountQuery = accountQuery.eq("line_user_id", params.lineUserId);
+    const { data: accounts, error: accountError } = await accountQuery;
+    if (accountError) console.error("[notify] LINE account lookup", accountError);
 
     for (const a of accounts ?? []) {
       try {
-        await pushMessage(a.line_user_id, [
-          params.lineMessage ?? textMessage(`【${params.title}】\n${params.body ?? ""}`),
+        await pushMessage(a.line_user_id, params.lineMessages ?? [
+          params.lineMessage ?? textMessage([`【${params.title}】`, params.body, params.link].filter(Boolean).join("\n")),
         ]);
         sent = true;
-      } catch {
+      } catch (error) {
+        console.error("[notify] LINE delivery failed", error);
         // 個別の送信失敗は通知全体を止めない
       }
     }
@@ -340,6 +346,92 @@ function asTextArray(value: unknown): string[] {
   return value.map((v) => String(v).trim()).filter(Boolean).slice(0, 30);
 }
 
+/** 完了したLINEヒアリングの材料だけを使って、承認待ちの広報案を制作する。 */
+export async function produceFromIntake(params: {
+  intakeItemId: string;
+  orgId: string;
+  subjectId: string;
+  lineUserId: string;
+}): Promise<{ contentId: string; risk: string; blocked: boolean } | { skipped: string }> {
+  const sb = supabaseAdmin();
+  const [{ data: subject, error: subjectError }, { data: intake, error: intakeError }] = await Promise.all([
+    sb.from("subjects").select("id, org_id, name, active")
+      .eq("id", params.subjectId).eq("org_id", params.orgId).single(),
+    sb.from("intake_items").select("id, title, kind, disclosable, newsworthiness, status")
+      .eq("id", params.intakeItemId).eq("subject_id", params.subjectId).eq("org_id", params.orgId).single(),
+  ]);
+  if (subjectError || !subject) throw new Error(subjectError?.message ?? "subject not found");
+  if (intakeError || !intake) throw new Error(intakeError?.message ?? "intake item not found");
+
+  const skip = async (reason: string, body: string) => {
+    await notify({
+      orgId: params.orgId,
+      subjectId: params.subjectId,
+      agent: "secretary",
+      title: "広報案の作成を見合わせています",
+      body,
+      toLine: true,
+      lineUserId: params.lineUserId,
+    });
+    return { skipped: reason };
+  };
+  if (!subject.active) return skip("inactive", "広報対象が停止中のため、広報案を作成できません。対象の設定をご確認ください。");
+  if (!intake.disclosable) return skip("private", "いただいた内容は非公開のため、広報案の作成を見合わせました。公開できる範囲をご確認ください。");
+
+  const { data: crisis, error: crisisError } = await sb.from("crisis_incidents")
+    .select("id, title").eq("subject_id", params.subjectId).eq("org_id", params.orgId)
+    .in("status", ["open", "containing"]).eq("posts_paused", true).limit(1).maybeSingle();
+  if (crisisError) throw new Error(crisisError.message);
+  if (crisis) return skip("crisis", `危機広報モード（${crisis.title}）のため、広報案の作成を見合わせました。ダッシュボードで状況をご確認ください。`);
+
+  // Webhookの再配信などで、同じ完了済み材料から重複して制作しない。
+  const { data: existing, error: existingError } = await sb.from("proposals")
+    .select("id").eq("intake_item_id", intake.id).eq("org_id", params.orgId)
+    .eq("subject_id", params.subjectId).limit(1).maybeSingle();
+  if (existingError) throw new Error(existingError.message);
+  if (existing) return { skipped: "already_started" };
+
+  const [channelResult, objectiveResult, personaResult] = await Promise.all([
+    sb.from("channels").select("type").eq("subject_id", params.subjectId).eq("org_id", params.orgId),
+    sb.from("pr_objectives").select("goal").eq("subject_id", params.subjectId).eq("org_id", params.orgId)
+      .eq("active", true).order("priority").limit(1).maybeSingle(),
+    sb.from("personas").select("name, segment, role").eq("subject_id", params.subjectId).eq("org_id", params.orgId)
+      .order("created_at").limit(1).maybeSingle(),
+  ]);
+  for (const result of [channelResult, objectiveResult, personaResult]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  const channels = coerceChannels((channelResult.data ?? []).map((channel) => channel.type));
+  const goal = coerceGoal(objectiveResult.data?.goal) ?? "awareness";
+  const persona = personaResult.data;
+  const audience = persona ? [persona.name, persona.segment, persona.role].filter(Boolean).join(" / ") : "検討中の見込み顧客";
+  const contentType = intake.kind === "achievement" || intake.kind === "customer_voice" ? "case_study" : "sns_post";
+  const score = Number(intake.newsworthiness);
+  const { data: proposal, error: proposalError } = await sb.from("proposals").insert({
+    org_id: params.orgId,
+    subject_id: params.subjectId,
+    intake_item_id: intake.id,
+    theme: String(intake.title || `${subject.name}の広報案`).slice(0, 500),
+    reason: "LINEでお聞きした内容をもとに、広報案を作成しました。",
+    goal,
+    audience: audience.slice(0, 500),
+    channels,
+    cta: "詳しくはお問い合わせください。",
+    expected_effect: `${GOAL_LABEL[goal]}につなげる`,
+    cautions: "公開前に内容と公開範囲をご確認ください。",
+    score: Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 50,
+    status: "proposed",
+  }).select("id").single();
+  if (proposalError || !proposal) throw new Error(proposalError?.message ?? "failed to create proposal");
+
+  return produceFromProposal({
+    proposalId: proposal.id,
+    contentType,
+    requireApproval: true,
+    lineUserId: params.lineUserId,
+  });
+}
+
 // -------------------------------------------------- 提案 → 制作 → 検査 ----
 /**
  * AIライターが本文を書き、AIマーケターが媒体別に最適化し、
@@ -348,6 +440,8 @@ function asTextArray(value: unknown): string[] {
 export async function produceFromProposal(params: {
   proposalId: string;
   contentType?: ContentTypeKey;
+  requireApproval?: boolean;
+  lineUserId?: string;
 }): Promise<{ contentId: string; risk: string; blocked: boolean }> {
   const sb = supabaseAdmin();
 
@@ -515,7 +609,7 @@ export async function produceFromProposal(params: {
     };
   }
 
-  await sb.from("risk_checks").insert({
+  const { error: riskError } = await sb.from("risk_checks").insert({
     org_id: proposal.org_id,
     content_id: content.id,
     overall: check.overall,
@@ -525,29 +619,39 @@ export async function produceFromProposal(params: {
     blocked: Boolean(check.blocked),
     checked_by: "analyst",
   });
+  if (riskError) throw new Error(riskError.message);
 
   const nextStatus = check.blocked ? "on_hold" : "pending_approval";
-  await sb
+  const { data: savedContent, error: contentError } = await sb
     .from("content_items")
     .update({ status: nextStatus, risk: check.overall })
-    .eq("id", content.id);
+    .eq("id", content.id)
+    .select("id")
+    .single();
+  if (contentError || !savedContent) throw new Error(contentError?.message ?? "failed to save content status");
 
-  await sb.from("proposals").update({ status: "produced" }).eq("id", proposal.id);
+  const { data: savedProposal, error: proposalError } = await sb.from("proposals")
+    .update({ status: "produced" }).eq("id", proposal.id).select("id").single();
+  if (proposalError || !savedProposal) throw new Error(proposalError?.message ?? "failed to save proposal status");
 
   if (proposal.intake_item_id) {
-    const { data: item } = await sb
+    const { data: item, error: itemError } = await sb
       .from("intake_items")
       .select("used_count")
       .eq("id", proposal.intake_item_id)
       .maybeSingle();
-    await sb
+    if (itemError || !item) throw new Error(itemError?.message ?? "intake item not found");
+    const { data: savedIntake, error: intakeError } = await sb
       .from("intake_items")
       .update({ status: "used", used_count: (item?.used_count ?? 0) + 1 })
-      .eq("id", proposal.intake_item_id);
+      .eq("id", proposal.intake_item_id)
+      .select("id")
+      .single();
+    if (intakeError || !savedIntake) throw new Error(intakeError?.message ?? "failed to save intake status");
   }
 
   // 6) 承認依頼 (自動投稿が許可されていれば承認をスキップ)
-  const auto = await canAutoPublish(proposal.subject_id, channels, check.overall);
+  const auto = !params.requireApproval && !params.lineUserId && await canAutoPublish(proposal.subject_id, channels, check.overall);
 
   if (check.blocked) {
     await notify({
@@ -559,6 +663,7 @@ export async function produceFromProposal(params: {
       body: `${written.title}\n\n${check.summary}\n\n${check.findings.slice(0, 3).map((f) => `・${f.problem}`).join("\n")}`,
       link: appUrl(`/dashboard/content/${content.id}`),
       toLine: true,
+      lineUserId: params.lineUserId,
     });
   } else if (auto) {
     await approveContent({
@@ -573,10 +678,14 @@ export async function produceFromProposal(params: {
       subjectId: proposal.subject_id,
       kind: "approval",
       agent: "secretary",
-      title: "広報案のご確認をお願いします",
+      title: "広報案が完成しました",
+      body: "内容をご確認のうえ、カードから承認・修正・保留をお選びください。",
       link: appUrl(`/dashboard/content/${content.id}`),
       toLine: true,
-      lineMessage: proposalFlex(
+      lineUserId: params.lineUserId,
+      lineMessages: [
+        textMessage("広報案が完成しました。内容をご確認のうえ、カードから承認・修正・保留をお選びください。"),
+        proposalFlex(
         {
           id: content.id,
           theme: written.title,
@@ -597,6 +706,7 @@ export async function produceFromProposal(params: {
         },
         appUrl(),
       ),
+      ],
     });
   }
 

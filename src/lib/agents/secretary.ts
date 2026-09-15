@@ -170,7 +170,8 @@ function wrapUpReply(): InterviewTurn {
     reply:
       "ありがとうございます。いただいた内容をもとに広報案を作成します。追加があれば、そのときにお知らせください。",
     complete: true,
-    extracted: { missing: [], disclosable: true, newsworthiness: 50 },
+    // Ending an interview does not change previously collected disclosure consent.
+    extracted: { missing: [] },
     learnings: [],
   };
 }

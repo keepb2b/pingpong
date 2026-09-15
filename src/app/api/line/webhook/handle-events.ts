@@ -8,7 +8,7 @@ import {
   proposalFlex,
 } from "@/lib/line";
 import { secretaryInterview } from "@/lib/agents/secretary";
-import { approveContent } from "@/lib/agents/orchestrator";
+import { approveContent, notify, produceFromIntake } from "@/lib/agents/orchestrator";
 import { appUrl } from "@/lib/tracking";
 import { CHANNEL_LABEL } from "@/lib/constants";
 
@@ -21,18 +21,18 @@ export type LineEvent = {
 };
 
 export async function processLineEvents(events: LineEvent[]) {
-  await Promise.all(
-    events.map((event) =>
-      handleEvent(event).catch(async (err) => {
-        console.error("[line] event failed", err);
-        if (event.replyToken) {
-          await replyMessage(event.replyToken, [
-            textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
-          ]).catch(() => undefined);
-        }
-      }),
-    ),
-  );
+  // LINE can put multiple messages from one user in one webhook. Process them
+  // in order so a short follow-up is not mistaken for a separate interview.
+  for (const event of events) {
+    await handleEvent(event).catch(async (err) => {
+      console.error("[line] event failed", err);
+      if (event.replyToken) {
+        await replyMessage(event.replyToken, [
+          textMessage("申し訳ありません。処理中に問題が発生しました。時間をおいて再度お試しください。"),
+        ]).catch(() => undefined);
+      }
+    });
+  }
 }
 
 function eventUserId(event: LineEvent): string | undefined {
@@ -144,7 +144,54 @@ async function handleMessage(event: LineEvent, userId: string) {
     if (handled) return;
   }
 
+  // A redelivered message must not start another interview or production run.
+  const { data: received, error: receivedError } = await sb
+    .from("messages")
+    .select("id")
+    .eq("org_id", account.org_id)
+    .contains("meta", { line_message_id: event.message.id })
+    .limit(1)
+    .maybeSingle();
+  if (receivedError) throw receivedError;
+  if (received) return;
+
+  const userText = event.message.text?.trim() ?? "";
+  if (event.message.type === "text" && isAcknowledgement(userText)) {
+    const { data: latestAssistant } = await sb
+      .from("messages")
+      .select("content")
+      .eq("org_id", account.org_id)
+      .eq("role", "assistant")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const lastReply = latestAssistant?.content ?? "";
+    const reply = /広報案を作成|承認カード|完成したら/.test(lastReply)
+      ? "どういたしまして。広報案が完成したら、このトークに承認カードをお届けします。"
+      : "どういたしまして。広報に使いたい出来事や追加情報があれば、いつでもお送りください。";
+    await replyMessage(replyToken, [textMessage(reply)]);
+    return;
+  }
+
   const conversation = await getOrCreateConversation(account.org_id, subjectId, userId);
+
+  // A revision instruction belongs to the already-created proposal. It must
+  // never be treated as the start of another promotion interview.
+  if (conversation.topic?.startsWith("revise:")) {
+    const contentId = conversation.topic.slice("revise:".length);
+    await sb.from("messages").insert({
+      org_id: account.org_id,
+      conversation_id: conversation.id,
+      role: "user",
+      content: event.message.text ?? "(添付された修正指示)",
+      meta: { line_message_id: event.message.id, revise_content_id: contentId },
+    });
+    await replyMessage(replyToken, [
+      textMessage("修正内容を承りました。広報案に反映して、改めてご確認いただけるよう準備します。"),
+    ]);
+    return;
+  }
 
   // 添付 (写真・動画・資料・音声) の保存
   let attachmentNote = "";
@@ -167,22 +214,25 @@ async function handleMessage(event: LineEvent, userId: string) {
     }
   }
 
-  const userText = event.message.text ?? (attachmentNote || "(添付のみ)");
+  const materialText = event.message.text ?? (attachmentNote || "(添付のみ)");
 
-  await sb.from("messages").insert({
+  const { error: messageError } = await sb.from("messages").insert({
     org_id: account.org_id,
     conversation_id: conversation.id,
     role: "user",
-    content: userText,
+    content: materialText,
     attachments,
+    meta: { line_message_id: event.message.id },
   });
+  if (messageError) throw messageError;
 
-  const { data: history } = await sb
+  const { data: history, error: historyError } = await sb
     .from("messages")
     .select("role, content")
     .eq("conversation_id", conversation.id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(24);
+  if (historyError) throw historyError;
 
   const { data: settings } = await sb
     .from("dialogue_settings")
@@ -192,33 +242,36 @@ async function handleMessage(event: LineEvent, userId: string) {
 
   const turn = await secretaryInterview({
     subjectId,
-    history: (history ?? []).slice(0, -1),
-    latest: userText,
+    history: (history ?? []).reverse().slice(0, -1),
+    latest: materialText,
     attachments,
     askedCount: conversation.question_index,
     maxQuestions: Math.min(settings?.max_questions_per_session ?? 6, 6),
   });
 
-  await sb.from("messages").insert({
+  const reply = turn.complete
+    ? "ありがとうございます。いただいた内容をもとに広報案を作成します。完成したら、このLINEに広報案と承認カードを自動でお届けします。"
+    : turn.reply;
+
+  // Save every turn, including early details and attachments without a title.
+  const intakeItemId = await upsertIntake({
+    orgId: account.org_id,
+    subjectId,
+    conversationId: conversation.id,
+    extracted: turn.extracted ?? {},
+    rawText: materialText,
+    assetUrls: attachments.map((a) => a.url).filter(Boolean) as string[],
+  });
+
+  const { error: assistantError } = await sb.from("messages").insert({
     org_id: account.org_id,
     conversation_id: conversation.id,
     role: "assistant",
     agent: "secretary",
-    content: turn.reply,
+    content: reply,
     meta: { extracted: turn.extracted, complete: turn.complete },
   });
-
-  // 聞き取れた内容を広報材料として保存
-  if (turn.extracted?.title || turn.complete) {
-    await upsertIntake({
-      orgId: account.org_id,
-      subjectId,
-      conversationId: conversation.id,
-      extracted: turn.extracted,
-      rawText: userText,
-      assetUrls: attachments.map((a) => a.url).filter(Boolean) as string[],
-    });
-  }
+  if (assistantError) throw assistantError;
 
   // 学習候補を記録 (ユーザーが後から確認・修正・忘却できる)
   for (const l of turn.learnings ?? []) {
@@ -228,12 +281,12 @@ async function handleMessage(event: LineEvent, userId: string) {
       subject_id: subjectId,
       category: l.category ?? "preference",
       statement: l.statement,
-      evidence: userText.slice(0, 500),
+      evidence: materialText.slice(0, 500),
       status: "pending",
     });
   }
 
-  await sb
+  const { data: updated, error: conversationError } = await sb
     .from("conversations")
     .update({
       question_index: turn.complete ? 0 : conversation.question_index + 1,
@@ -241,9 +294,56 @@ async function handleMessage(event: LineEvent, userId: string) {
       status: turn.complete ? "closed" : "open",
       last_message_at: new Date().toISOString(),
     })
-    .eq("id", conversation.id);
+    .eq("id", conversation.id)
+    .eq("status", "open")
+    .select("id")
+    .maybeSingle();
+  if (conversationError) throw conversationError;
+  if (!updated) return;
 
-  await replyMessage(replyToken, [textMessage(turn.reply)]);
+  if (!turn.complete) {
+    await replyMessage(replyToken, [textMessage(reply)]);
+    return;
+  }
+
+  // Reply first. Completion uses a push; LINE reply tokens are single-use.
+  await replyMessage(replyToken, [textMessage(reply)]).catch((error) => {
+    console.error("[line] production acknowledgement failed", error);
+  });
+
+  try {
+    // This is awaited inside the webhook's after() task so the runtime stays alive.
+    await produceFromIntake({ intakeItemId, orgId: account.org_id, subjectId, lineUserId: userId });
+  } catch (error) {
+    console.error("[line] promotion production failed", error);
+    await notify({
+      orgId: account.org_id,
+      subjectId,
+      kind: "error",
+      agent: "secretary",
+      title: "広報案の作成を完了できませんでした",
+      body: "いただいた内容は保存されています。時間をおいて、改めて広報材料をお送りください。",
+      toLine: true,
+      lineUserId: userId,
+    }).catch((notificationError) => {
+      console.error("[line] production failure notification failed", notificationError);
+    });
+  }
+}
+
+/**
+ * Messages such as "ありがとうございます" are conversation acknowledgements,
+ * not promotion material. Keep the whitelist narrow: messages with a request,
+ * date, number, attachment, or any substantial extra wording still go through
+ * the normal interview so useful new information is never discarded.
+ */
+function isAcknowledgement(text: string): boolean {
+  const normalized = text
+    .toLowerCase()
+    .replace(/[！!。．、,\s]/g, "")
+    .replace(/[😊🙏✨👍☺️]/g, "");
+  if (!normalized || normalized.length > 32) return false;
+  return /^(ありがとう(?:ございます|ございました)?|どうも|了解(?:です|しました)?|承知(?:しました|です)?|ok|okay|thanks|thankyou|thx|助かります|よろしく(?:お願いします|です)?)$/.test(normalized);
 }
 
 // ------------------------------------------------------------ コマンド ----
@@ -263,9 +363,10 @@ async function handleCommand(
           "",
           "・出来事をそのまま送るだけで、AI秘書が必要な情報を聞き取ります",
           "・写真、動画、資料もそのまま送れます",
+          "・聞き取りが終わると広報案を作成し、完成後にこのトークへ承認カードを自動でお届けします",
           "",
           "コマンド",
-          "「提案」承認待ちの広報案を表示",
+          "「提案」以前の承認待ちの広報案を再表示",
           "「予定」投稿予定を表示",
           "「レポート」最新の月次レポート",
           "「スコア」AI広報スコア",
@@ -698,20 +799,28 @@ async function upsertIntake(params: {
   };
   rawText: string;
   assetUrls: string[];
-}) {
+}): Promise<string> {
   const sb = supabaseAdmin();
 
-  const { data: existing } = await sb
+  const { data: existing, error: readError } = await sb
     .from("intake_items")
-    .select("id, raw_text, structured")
+    .select("id, raw_text, structured, disclosable")
     .eq("conversation_id", params.conversationId)
     .maybeSingle();
+  if (readError) throw readError;
+
+  const previous = existing?.structured ?? {};
+  const facts = new Map<string, { key: string; value: string; needs_confirmation?: boolean }>();
+  for (const fact of [...(previous.facts ?? []), ...(params.extracted.facts ?? [])]) {
+    if (fact?.key) facts.set(fact.key, fact);
+  }
 
   const structured = {
-    ...(existing?.structured ?? {}),
-    facts: params.extracted.facts ?? [],
-    missing: params.extracted.missing ?? [],
-    assets: params.assetUrls,
+    ...previous,
+    summary: params.extracted.summary ?? previous.summary,
+    facts: [...facts.values()],
+    missing: params.extracted.missing ?? previous.missing ?? [],
+    assets: [...new Set([...(previous.assets ?? []), ...params.assetUrls])],
   };
 
   const validKinds = [
@@ -727,20 +836,21 @@ async function upsertIntake(params: {
   const kind = validKinds.includes(params.extracted.kind ?? "") ? params.extracted.kind : "event";
 
   if (existing) {
-    await sb
+    const { error } = await sb
       .from("intake_items")
       .update({
         title: params.extracted.title ?? undefined,
         raw_text: `${existing.raw_text ?? ""}\n${params.rawText}`.trim().slice(0, 8000),
         structured,
         newsworthiness: params.extracted.newsworthiness ?? undefined,
-        disclosable: params.extracted.disclosable ?? true,
+        disclosable: params.extracted.disclosable ?? existing.disclosable,
       })
       .eq("id", existing.id);
-    return;
+    if (error) throw error;
+    return existing.id;
   }
 
-  await sb.from("intake_items").insert({
+  const { data: created, error } = await sb.from("intake_items").insert({
     org_id: params.orgId,
     subject_id: params.subjectId,
     conversation_id: params.conversationId,
@@ -751,5 +861,8 @@ async function upsertIntake(params: {
     newsworthiness: params.extracted.newsworthiness ?? 50,
     disclosable: params.extracted.disclosable ?? true,
     status: "new",
-  });
+  }).select("id").single();
+  if (error) throw error;
+  if (!created) throw new Error("failed to save intake");
+  return created.id;
 }
